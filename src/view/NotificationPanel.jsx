@@ -68,13 +68,21 @@ var NotificationPanel = React.createClass({
         var self = this;
 
         _.each(nextProps.notifications, function (notification) {
-            self._notificationSystem.addNotification(
-                self._buildNotification(notification)
-            );
-
-            // delete the notification from the store
-            self.props.onDelete(notification.id);
+            if (notification.dismiss === true) {
+                self._notificationSystem.removeNotification(notification.id);
+            }
+            else {
+                self._notificationSystem.addNotification(self._buildNotification(notification));
+            }
         });
+
+        const ids = _.pluck(nextProps.notifications, "id");
+        if (ids.length) {
+            // delete the notifications from the store,
+            // so I don't add them again to the notification system
+            // the next time new props are received
+            self.props.onDelete(ids);
+        }
     },
 
     shouldComponentUpdate: function () {

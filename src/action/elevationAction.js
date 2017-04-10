@@ -6,7 +6,7 @@ const _ = require("underscore");
 
 const FetchStatus = require("../constant/elevationConstant").FetchStatus;
 const notificationAction = require("./notificationAction");
-const NotificationLevel = require("../constant/notificationConstant").NotificationLevel;
+const NotificationLevel = require("../constant/notificationConstant").Level;
 const routePlannerAction = require("./routePlannerAction");
 
 
@@ -67,7 +67,7 @@ const dispatchSuccessNotifications = function (dispatch, totalPointCount) {
     dispatch(updateProgress(totalPointCount, totalPointCount));
 
     // discard the sticky notification
-    dispatch(notificationAction.deleteNotification("FETCH_ELEVATIONS"));
+    dispatch(notificationAction.dismissNotification("FETCH_ELEVATIONS"));
 };
 
 /**
@@ -87,8 +87,8 @@ Error message: ${errorMessage}`));
     dispatch(updateStatus(FetchStatus.ERROR, errorMessage));
 };
 
-const findFirstPointWithoutElevation = function (points) {
-    return _.findIndex(points, point => _.has(point, "ele"));
+const findFirstIndexWithoutElevation = function (points) {
+    return _.findIndex(points, point => !_.has(point, "ele"));
 };
 
 /**
@@ -127,6 +127,7 @@ const hydrateElevationCoordinate = function (points, lowerBound, results) {
                     (lowerBound + index), "and the corresponding result:",
                     "point={", point.lat(), ",", point.lng(), "},",
                     "result={", resultLat, ",", resultLng, "}");
+            point.ele = null;
         }
         else {
             point.ele = result.elevation.toFixed(2);
@@ -146,7 +147,7 @@ const hydrateElevationCoordinate = function (points, lowerBound, results) {
  *    the update is done is place.
  */
 const fetchElevations = function (dispatch, routeHash, points) {
-    const lowerBound = findFirstPointWithoutElevation(points);
+    const lowerBound = findFirstIndexWithoutElevation(points);
 
     if (lowerBound === -1) {
         dispatchSuccessNotifications(dispatch, points.length);

@@ -16,3 +16,18 @@ module.exports.hashPoints = function (points) {
         };
     }));
 };
+
+/**
+ * @desc Hash the lng, lat and ele attributes of the array of points.
+ * @param {point[]} points - array of points to hash
+ * @return {string} - the hash
+ */
+module.exports.hashFullPoints = function (points) {
+    return hashFunction(_.map(points, function (point) {
+        return {
+            lat: point.lat,
+            lng: point.lng,
+            ele: point.ele
+        };
+    }));
+};

@@ -2,6 +2,8 @@
 
 const _ = require("underscore");
 
+const hashFullPoints = require("./hash").hashFullPoints;
+
 /**
  * @desc Perform a deep comparison between the two given points
  *    to determine if they are equal; only the lat and lng attributes are compared.
@@ -86,15 +88,55 @@ const totalDistance = function (routes) {
 module.exports.totalDistance = totalDistance;
 
 /**
- * @desc Find if the given route exists in the specified route list.
- *    The match is done by the route hash.
- * @param {route} route - the route to find
+ * @desc Find if the route with the given hash exists in the specified route list.
  * @param {route[]} routes - the list to find in
- * @return {boolean} - true if the route exists, false otherwise
+ * @param {string} routeHash - the hash of the route to find
+ * @return {route} - the target route, or undefined if it cannot be found
  */
-const routeExists = function (route, routes) {
-    return _.find(routes, r => {
-        return r.hash === route.hash;
-    }) !== undefined;
+const findRoute = function (routes, routeHash) {
+    return _.find(routes, r => r.hash === routeHash);
 };
-module.exports.routeExists = routeExists;
+module.exports.findRoute = findRoute;
+
+/**
+ * @desc Check if all routes in the routes list are the same as the routes in the others list.
+ *    The verification does not take the point elevations into account; it is only done
+ *    by comparing the route hashes.
+ * @param {route[]} routes - a route list
+ * @param {route[]} others - another route list
+ * @return {boolean} - true if the routes are the same between the two lists, false otherwise
+ */
+const areRoutesSame = function (routes, others) {
+    // the length comparison avoids the negative result for empty "others" list
+    return others.length === routes.length &&
+            _.every(others, other => findRoute(routes, other.hash) !== undefined);
+};
+module.exports.areRoutesSame = areRoutesSame;
+
+/**
+ * @desc Check if all routes in the routes list are identical to the routes in the others list.
+ *    The verification included the elevation coordinates of points.
+ * @param {route[]} routes - a route list
+ * @param {route[]} others - another route list
+ * @return {boolean} - true if the routes are identical between the two lists, false otherwise
+ */
+const areRoutesIdentical = function (routes, others) {
+    // the length comparison avoids the negative result for empty "others" list
+    return others.length === routes.length &&
+            _.every(others, other => {
+                const otherHash = hashFullPoints(other.points);
+                return _.some(routes, route => hashFullPoints(route.points) === otherHash);
+            });
+};
+module.exports.areRoutesIdentical = areRoutesIdentical;
+
+/**
+ * @desc Check if the elevation coordinate on any of the route points is missing.
+ * @param {route} route - the route to check
+ * @return {boolean} - true if any of the route points is missing the elevation coordinate,
+ *    false otherwise
+ */
+const isElevationIncomplete = function (route) {
+    return _.some(route.points, point => point.ele === undefined);
+};
+module.exports.isElevationIncomplete = isElevationIncomplete;

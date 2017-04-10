@@ -72,8 +72,10 @@ module.exports.updateRoute = function (oldRouteHash, route, routes) {
         });
 
         // just the routes which are new compared to the original route list
-        const netNewRoutes = _.filter(newRoutes, r => {
-            return parsers.routeExists(r, routes) === false;
+        // or the routes which have incomplete elevations
+        const netNewRoutes = _.filter(newRoutes, newRoute => {
+            return parsers.findRoute(routes, newRoute.hash) === undefined ||
+                    parsers.isElevationIncomplete(newRoute);
         });
 
         // tell the app that we have that many routes being updated with elevations

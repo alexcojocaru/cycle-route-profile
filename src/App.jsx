@@ -128,7 +128,7 @@ var App = React.createClass({
                 <div>
                     <NotificationPanel
                             notifications={this.props.notifications}
-                            onDelete={this.notificationAction.deleteNotification}
+                            onDelete={this.notificationAction.deleteNotifications}
                     />
                     <ApiKeyView
                             apiKey={this.props.currentApiKey}

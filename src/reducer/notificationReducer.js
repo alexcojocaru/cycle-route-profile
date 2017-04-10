@@ -27,14 +27,17 @@ const notificationReducer = function (state, action) {
                 }
             ];
             break;
-        case ActionType.DELETE_NOTIFICATION:
-            nextState.notifications = _.without(
+        case ActionType.DELETE_NOTIFICATIONS:
+            nextState.notifications = _.filter(
                 nextState.notifications,
-                _.findWhere(
-                    nextState.notifications,
-                    { id: action.id }
-                )
+                notification => _.contains(action.ids, notification.id) === false
             );
+            break;
+        case ActionType.DISMISS_NOTIFICATION:
+            nextState.notifications = [{
+                id: action.id,
+                dismiss: true
+            }];
             break;
         default:
     }

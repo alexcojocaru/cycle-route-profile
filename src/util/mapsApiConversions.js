@@ -75,10 +75,11 @@ module.exports.convertSimpleCoordinateToGoogle = convertSimpleCoordinateToGoogle
  * @return {google.maps.Point} - the on-screen location relative to the viewport
  */
 var convertRelativeLocationToAbsolute = function (mapElement, relativeLocation) {
-    const mapRect = mapElement.getBoundingClientRect();
+    // const mapRect = mapElement.getBoundingClientRect();
     return {
-        x: mapRect.left + relativeLocation.x,
-        y: mapRect.top + relativeLocation.y
+        // hmm... looks like I don't need to take the map position into account
+        x: /* mapRect.left + */relativeLocation.x,
+        y: /* mapRect.top + */relativeLocation.y
     };
 };
 module.exports.convertRelativeLocationToAbsolute = convertRelativeLocationToAbsolute;

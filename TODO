@@ -1,5 +1,15 @@
 TODO
+====
+
+distance attribute of each route
+re-enable controls after fetching elevations
+get elevation along path
+
+move the blue tabs to the toggle panel
 
 do I stil need promises? If no, remove the polyfill from App.jsx and package.json
 
 remove all console.log statements
+
+update the max route point count / split route point count in routeModifiers
+

@@ -8,6 +8,7 @@ var TravelModePropValidator = require("../util/routeValidators").TravelModePropV
 var EndpointType = require("../constant/routePlannerConstant").EndpointType;
 var conversions = require("../util/mapsApiConversions");
 var calculators = require("../util/routeCalculators");
+var parsers = require("../util/routeParsers");
 var notifications = require("../util/routeNotifications");
 var builders = require("../util/mapBuilders");
 
@@ -184,16 +185,19 @@ const Map = React.createClass({
         const newGoogleRoute = this.routesDirections[routeHash].renderer.getDirections().routes[0];
         const newRoute = conversions.convertGoogleRoute(newGoogleRoute);
 
-        // save this; I am going to need it later
-        const oldRoutes = this.routes;
+        // ignore the change if the updated route is identical to the original
+        if (newRoute.hash !== routeHash) {
+            // save this; I am going to need it later
+            const oldRoutes = this.routes;
 
-        this._replaceRoute(routeHash, newRoute);
+            this._replaceRoute(routeHash, newRoute);
 
-        this.props.onRouteUpdate(routeHash, newRoute, this.routes);
+            this.props.onRouteUpdate(routeHash, newRoute, this.routes);
 
-        if (oldRoutes.length === 1 && oldRoutes[0].points.length === 2 &&
-                this.routes.length === 1 && this.routes[0].points.length === 3) {
-            notifications.firstWaypoint(this.props.onNotification);
+            if (oldRoutes.length === 1 && oldRoutes[0].points.length === 2 &&
+                    this.routes.length === 1 && this.routes[0].points.length === 3) {
+                notifications.firstWaypoint(this.props.onNotification);
+            }
         }
     },
 
@@ -321,17 +325,16 @@ const Map = React.createClass({
             updateRoute = true;
         }
 
-        // for each new route, check if there is not a matching old route;
-        // the length comparison avoids the negative result for empty new route list
-        const routesChanged = nextProps.routes.length !== this.routes.length ||
-            _.some(nextProps.routes, function (newRoute) {
-                return false === _.some(self.routes, function (route) {
-                    return route.hash === newRoute.hash;
-                });
-            });
+        const routesChanged = !parsers.areRoutesSame(this.routes, nextProps.routes);
         if (routesChanged) {
+            console.log("routes have changed");
             this.routes = nextProps.routes;
             updateRoute = true;
+        }
+        const routeElevationsChanged = !parsers.areRoutesIdentical(this.routes, nextProps.routes);
+        if (routeElevationsChanged) {
+            console.log("route elevations have changed");
+            this.routes = nextProps.routes;
         }
         
         if (updateRoute) {
@@ -346,12 +349,16 @@ const Map = React.createClass({
 
         // disable/enable the routes if the flag changed
         if (this.controlsDisabled !== nextProps.controlsDisabled) {
-            console.log("DISABLE/ENABLE the routes");
+            console.log("DISABLE/ENABLE the routes:", nextProps.controlsDisabled);
             this.controlsDisabled = nextProps.controlsDisabled;
             _.each(this.routesDirections, function (routeDirections) {
+                // TODO distance
+                // TODO
+                /*
                 routeDirections.renderer.setOptions({
                     draggable: !self.controlsDisabled
                 });
+                */
             });
         }
     },
