@@ -1,7 +1,7 @@
 "use strict";
 
 // reference the static assets, to be processed/bundled by the webpack plugins
-require("./css/main.scss");
+require("./css/main.css");
 
 var React = require("react");
 var ReactDOM = require("react-dom");
@@ -64,7 +64,9 @@ var App = React.createClass({
                         this.routePlannerAction.openEndpointSelectionDialog,
                     onCloseEndpointSelectionDialog:
                         this.routePlannerAction.closeEndpointSelectionDialog,
-                    disabled: this.props.disabled
+                    controlsDisabled: this.props.controlsDisabled,
+                    controlsOpened: this.props.controlsOpened,
+                    onToggleControls: this.routePlannerAction.toggleControls
                 };
                 view = React.createElement(RoutePlannerView, props);
                 break;
@@ -79,7 +81,7 @@ var App = React.createClass({
     },
 
     _updateContent: function (view) {
-        if (this.props.disabled === false) {
+        if (this.props.controlsDisabled === false) {
             this.containerAction.updateView(view);
         }
     },
@@ -158,7 +160,7 @@ App = ReactRedux.connect(function (state) {
         distance: state.route.distance,
         endpointSelectionDialogLocation: state.route.endpointSelectionDialogLocation,
         endpointSelectionDialogVisible: state.route.endpointSelectionDialogVisible,
-        disabled: state.route.disabled,
+        controlsOpened: state.route.controlsOpened,
 
         notifications: state.notification.notifications
     };

@@ -2,6 +2,7 @@ var Path = require("path");
 
 var HtmlWebpackPlugin = require("html-webpack-plugin");
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
+var extractCSS = new ExtractTextPlugin("stylesheets/[name]-[contenthash:8].min.css");
 
 var Clean = require("clean-webpack-plugin");
 var UglifyJsPlugin = require("webpack").optimize.UglifyJsPlugin;
@@ -15,7 +16,7 @@ module.exports = {
     },
     output: {
         path: `./${buildDir}`,
-        filename: "[name].min.js", // Template based on keys in entry above
+        filename: "[name]-[hash:8].min.js", // Template based on keys in entry above
         pathInfo: false
     },
     devtool: "source-map",
@@ -41,31 +42,37 @@ module.exports = {
                 test: /\.json$/,
                 loaders: ["json-loader"]
             },
-            // the main sass get compiled as separate bundles
             {
                 test: /\.scss$/,
-                loader: ExtractTextPlugin.extract(
+                loader: extractCSS.extract(
                     "style-loader",
                     "css-loader?sourceMap!sass-loader"
                 )
             },
             {
+                test: /\.css$/,
+                loader: extractCSS.extract(
+                    "style-loader",
+                    "css-loader?sourceMap"
+                )
+            },
+            {
                 test: /\.png$/,
-                loader: "file-loader?name=images/[path][name].[ext]"
+                loader: "file-loader?name=images/[path][name]-[hash:8].[ext]"
             },
             {
                 test: /\.gif$/,
-                loader: "file-loader?name=images/[path][name].[ext]"
+                loader: "file-loader?name=images/[path][name]-[hash:8].[ext]"
             },
             {
                 test: /\.jpe?g$/,
-                loader: "file-loader?name=images/[path][name].[ext]"
+                loader: "file-loader?name=images/[path][name]-[hash:8].[ext]"
             },
             {
                 // the following doesn't work, for the request param is like "?-sa9xtz"
                 // test: /\.svg(\?v=[0-9]\.[0-9]\.[0-9])?$/,
                 test: /\.svg(\?.*)?$/,
-                loader: "file-loader?name=images/[name].[ext]"
+                loader: "file-loader?name=images/[path][name]-[hash:8].[ext]"
             }
         ]
     },
@@ -80,7 +87,7 @@ module.exports = {
             inject: "body", // Inject all scripts into the body
             favicon: "./src/images/favicon.png"
         }),
-        new ExtractTextPlugin("[name].min.css"),
+        extractCSS,
         new Clean([buildDir]),
         new DedupePlugin(),
         new UglifyJsPlugin({ minimize: true, output: { comments: false } })

@@ -33,30 +33,26 @@ var ApiKey = React.createClass({
 
     render: function () {
         return (
+            (this.props.isMapsApiLoaded === false) &&
             <Flex align="center" px={2}>
                 <Box>
                     <span className="label">API key</span>
                 </Box>
                 <Box>
-                    <TextField
-                            name="apiKey"
-                            type={this.props.isApiKeySaved ? "password" : "text"}
+                    <TextField name="apiKey"
+                            type="text"
                             value={this.props.apiKey}
                             onChange={this._onChange}
-                            disabled={this.props.isMapsApiLoaded}
-                            style = {{ width: 380 }}
+                            style = {{ width: "380px" }}
                     />
                 </Box>
                 <Box>
                     <ApiKeyTooltip />
                 </Box>
                 <Box pl={2}>
-                    <RaisedButton
-                            label="Load Map"
+                    <RaisedButton label="Load Map"
                             onClick={this._onLoadMap}
-                            disabled={
-                                this.props.isMapsApiLoaded || this.props.isApiKeyValid === false
-                            }
+                            disabled={this.props.isApiKeyValid === false}
                     />
                 </Box>
             </Flex>

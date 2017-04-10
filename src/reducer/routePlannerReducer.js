@@ -43,7 +43,8 @@ const initialState = {
     endpointSelectionDialogVisible: false,
 
     // whether the controls are disabled (eg. while the elevations are being fetched)
-    disabled: false
+    controlsDisabled: false,
+    controlsOpened: false
 };
 
 /**
@@ -427,6 +428,9 @@ console.log("action:", action); // eslint-disable-line indent
             break;
         case ActionTypes.CLOSE_ENDPOINT_SELECTION_DIALOG:
             nextState.endpointSelectionDialogVisible = false;
+            break;
+        case ActionTypes.TOGGLE_CONTROLS:
+            nextState.controlsOpened = !nextState.controlsOpened;
             break;
         default:
     }

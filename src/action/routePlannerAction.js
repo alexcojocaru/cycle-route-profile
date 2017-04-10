@@ -11,7 +11,8 @@ var Types = keyMirror({
     EXPORT_GPX: null,
     UPDATE_TRAVEL_MODE: null,
     OPEN_ENDPOINT_SELECTION_DIALOG: null,
-    CLOSE_ENDPOINT_SELECTION_DIALOG: null
+    CLOSE_ENDPOINT_SELECTION_DIALOG: null,
+    TOGGLE_CONTROLS: null
 });
 module.exports.Types = Types;
 
@@ -78,5 +79,11 @@ module.exports.openEndpointSelectionDialog = function (geoLocation, screenLocati
 module.exports.closeEndpointSelectionDialog = function () {
     return {
         type: Types.CLOSE_ENDPOINT_SELECTION_DIALOG
+    };
+};
+
+module.exports.toggleControls = function () {
+    return {
+        type: Types.TOGGLE_CONTROLS
     };
 };
