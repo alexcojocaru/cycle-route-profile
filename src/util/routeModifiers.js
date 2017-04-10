@@ -1,6 +1,7 @@
 "use strict";
 
 const _ = require("underscore");
+const logger = require("../util/log").routeModifiers;
 const hashFunction = require("../util/hash").hashPoints;
 const builders = require("./routeBuilders");
 const parsers = require("./routeParsers");
@@ -203,8 +204,7 @@ const reconnectRoute = function (newRoutes, oldRoutes, index) {
 
         if (currentRouteFinishEqual === false && nextRouteFinishEqual === false) {
             // this should  not happen, I don't know how to fix this
-            console.log(`ERROR: \
-the finish point on route #${index} has changed: \
+            logger.error(`the finish point on route #${index} has changed: \
 '${JSON.stringify(_.last(newRoute.points))}'\
 , but the start point on the following route has changed too: \
 '${JSON.stringify(_.first(newNextRoute.points))}'\
@@ -240,17 +240,12 @@ const reconnectRoutes = function (routes, oldRoutes) {
 };
 
 /**
- * @desc update the route list with the given route and return a new copy of the list.
- * @param {string} oldRouteHash - the old hash of the route to update
- * @param {route} route - the route to update
- * @param {route[]} routes - the existing route list
- * @return {route[]} - the updated route list
+ * @desc normalize the route list and return a new list.
+ * @param {route[]} routes - the route list to normalize
+ * @return {route[]} - the new route list
  */
-const updateRoutes = function (oldRouteHash, route, routes) {
-    // build a new list, with the old route removed and the new route inserted in the same position
-    const newRoutes = _.map(routes, function (r) {
-        return builders.cloneRoute(r.hash === oldRouteHash ? route : r);
-    });
+const normalizeRoutes = function (routes) {
+    const newRoutes = builders.cloneRoutes(routes);
 
     const needSplit = _.some(newRoutes, function (r) {
         return r.points.length > (MAX_ROUTE_POINT_COUNT - 1);
@@ -263,7 +258,7 @@ const updateRoutes = function (oldRouteHash, route, routes) {
 
     return result;
 };
-module.exports.updateRoutes = updateRoutes;
+module.exports.normalizeRoutes = normalizeRoutes;
 
 /**
  * @desc Update the elevation coordinate on the points on the given route
@@ -273,6 +268,7 @@ module.exports.updateRoutes = updateRoutes;
  * @param {point[]} pointsWithElevation - the points list, with the elevation attribute set
  * @return {route} - a new route (based on the given one) with points the elevation updated
  */
+// TODO probably remove it altogether
 const updateElevations = function (route, pointsWithElevation) {
     const newRoute = builders.cloneRoute(route);
     newRoute.points = _.map(newRoute.points, (point, index) => {

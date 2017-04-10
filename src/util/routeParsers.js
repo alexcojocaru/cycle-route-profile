@@ -81,9 +81,7 @@ module.exports.getNextRoute = getNextRoute;
  * @return {number} - the total distance
  */
 const totalDistance = function (routes) {
-    return _.reduce(routes, function (distance, route) {
-        return (route.distance || 0) + distance;
-    }, 0);
+    return _.reduce(routes, (distance, route) => (route.distance || 0) + distance, 0);
 };
 module.exports.totalDistance = totalDistance;
 
@@ -120,6 +118,7 @@ module.exports.areRoutesSame = areRoutesSame;
  * @param {route[]} others - another route list
  * @return {boolean} - true if the routes are identical between the two lists, false otherwise
  */
+// TODO remove???
 const areRoutesIdentical = function (routes, others) {
     // the length comparison avoids the negative result for empty "others" list
     return others.length === routes.length &&

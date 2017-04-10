@@ -1,6 +1,8 @@
 "use strict";
 
 var _ = require("underscore");
+
+const logger = require("../util/log").elevationReducer;
 var ActionTypes = require("../action/elevationAction").Types;
 var FetchStatus = require("../constant/elevationConstant").FetchStatus;
 
@@ -25,7 +27,7 @@ var elevationReducer = function (state, action) {
             break;
         default:
     }
-    console.log("elevation state:", nextState);
+    logger.debug("elevation state:", nextState);
     return nextState;
 };
 

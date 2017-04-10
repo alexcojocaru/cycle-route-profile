@@ -8,6 +8,7 @@ const FetchStatus = require("../constant/elevationConstant").FetchStatus;
 const notificationAction = require("./notificationAction");
 const NotificationLevel = require("../constant/notificationConstant").Level;
 const routePlannerAction = require("./routePlannerAction");
+const logger = require("../util/log").elevationAction;
 
 
 const Types = keyMirror({
@@ -122,7 +123,7 @@ const hydrateElevationCoordinate = function (points, lowerBound, results) {
 
         if (Math.round(resultLat * 10000) !== Math.round(point.lat() * 10000) ||
                Math.round(resultLng * 10000) !== Math.round(point.lng() * 10000)) {
-            console.log(
+            logger.warn(
                     "Coordinates don't match for point at index",
                     (lowerBound + index), "and the corresponding result:",
                     "point={", point.lat(), ",", point.lng(), "},",
@@ -150,6 +151,7 @@ const fetchElevations = function (dispatch, routeHash, points) {
     const lowerBound = findFirstIndexWithoutElevation(points);
 
     if (lowerBound === -1) {
+        // TODO are these google point or POJOs
         dispatchSuccessNotifications(dispatch, points.length);
         dispatch(routePlannerAction.updateElevations(routeHash, points));
     }
@@ -187,16 +189,15 @@ const fetchElevations = function (dispatch, routeHash, points) {
 };
 
 /**
- * @desc fetch the elevation coordinates for the given route.
- * @param {route} route - the route to fetch elevations for
+ * @desc fetch the elevation coordinates for the given points.
+ * @param {string} routeHash - the hash of the route containing the given points
+ * @param {point[]} points - the points to fetch elevations for
  * @return {function} - an action
  */
-module.exports.fetch = function (route) {
-    // since we're going to mutate the points and add the elevation coordinate to them,
-    // clone the list
-    const points = _.map(route.points, point => new google.maps.LatLng(point.lat, point.lng));
+module.exports.fetch = function (routeHash, points) {
+    const googlePoints = _.map(points, point => new google.maps.LatLng(point.lat, point.lng));
 
     return function (dispatch) {
-        fetchElevations(dispatch, route.hash, points);
+        fetchElevations(dispatch, routeHash, googlePoints);
     };
 };

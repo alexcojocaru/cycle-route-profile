@@ -7,6 +7,8 @@ var _ = require("underscore");
 var ToGeoJson = require("togeojson");
 var Simplify = require("simplify-geojson");
 
+const logger = require("../util/log").elevationCalculator;
+
 var ElevationCalculator = React.createClass({
 
     getInitialState: function () {
@@ -62,7 +64,7 @@ var ElevationCalculator = React.createClass({
 
             if (Math.round(resultLat * 10000) !== Math.round(pointLat * 10000) ||
                    Math.round(resultLon * 10000) !== Math.round(pointLon * 10000)) {
-                console.log(
+                logger.warn(
                         "Coordinates don't match for point at index",
                         (lowerBound + index), "and the corresponding result:",
                         "point={", pointLat, ",", pointLon, "},",

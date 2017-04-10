@@ -18,6 +18,7 @@
 
 const _ = require("underscore");
 
+const logger = require("../util/log").routePlannerReducer;
 const ActionTypes = require("../action/routePlannerAction").Types;
 const TravelMode = require("../constant/routePlannerConstant").TravelMode;
 const EndpointType = require("../constant/routePlannerConstant").EndpointType;
@@ -55,8 +56,9 @@ const initialState = {
 };
 
 const routePlannerReducer = function (state, action) {
-console.log("current reducer state:", state); // eslint-disable-line indent
-console.log("action:", action); // eslint-disable-line indent
+    logger.debug("current reducer state:", state);
+    logger.debug("action:", action);
+
     const nextState = _.clone(state || initialState);
 
     switch (action.type) {
@@ -71,7 +73,7 @@ console.log("action:", action); // eslint-disable-line indent
                     nextState.finish = state.endpoint;
                     break;
                 default:
-                    console.log("Unknown endpoint type to update:", action.endpointType);
+                    logger.error("Unknown endpoint type to update:", action.endpointType);
             }
 
             if (nextState.start && nextState.finish) {
@@ -85,11 +87,16 @@ console.log("action:", action); // eslint-disable-line indent
             }
 
             break;
-        case ActionTypes.UPDATE_ROUTE_INTERNAL:
-            nextState.routes = action.routes;
+        case ActionTypes.DELETE_WAYPOINT:
+            nextState.routes = modifiers.deleteWaypoint(nextState.routes, action.waypoint);
             break;
-        case ActionTypes.UPDATE_ROUTE_EXTERNAL:
-            nextState.routes = action.routes;
+        case ActionTypes.UPDATE_ROUTE:
+            // TODO if the first point on a route gets moved, the routes are not reconnected
+            const newRoutes = nextState.routes = modifiers.normalizeRoutes(
+                _.map(nextState.routes, route => {
+                    return route.hash === action.oldRouteHash ? action.newRoute : route;
+                })
+            );
             nextState.distance = parsers.totalDistance(nextState.routes);
             break;
         case ActionTypes.DELETE_ROUTES:
@@ -115,21 +122,22 @@ console.log("action:", action); // eslint-disable-line indent
             nextState.controlsDisabled = action.controlsDisabled;
             break;
         case ActionTypes.UPDATING_ELEVATIONS:
-            nextState.updatingRouteCount = action.routeCount;
-            nextState.controlsDisabled = nextState.updatingRouteCount > 0;
+            nextState.updatingRouteCount = nextState.updatingRouteCount + 1;
+            nextState.controlsDisabled = true;
             break;
         case ActionTypes.UPDATE_ELEVATIONS:
-            nextState.routes = _.map(state.routes, route => {
-                return route.hash === action.hash
+// TODO set the `elevations` property on the route being updated
+            nextState.routes = _.map(nextState.routes, route => {
+                return route.hash === action.routeHash
                         ? modifiers.updateElevations(route, action.points)
                         : builders.cloneRoute(route);
             });
-            nextState.updatingRouteCount = state.updatingRouteCount - 1;
+            nextState.updatingRouteCount = nextState.updatingRouteCount - 1;
             nextState.controlsDisabled = nextState.updatingRouteCount > 0;
             break;
         default:
     }
-console.log("next reducer state:", nextState); // eslint-disable-line indent
+    logger.debug("next reducer state:", nextState);
     return nextState;
 };
 

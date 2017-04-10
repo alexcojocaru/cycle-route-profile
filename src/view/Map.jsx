@@ -1,16 +1,18 @@
 /* global google:true*/
 "use strict";
 
-var React = require("react");
-var _ = require("underscore");
+const React = require("react");
+const _ = require("underscore");
 
-var TravelModePropValidator = require("../util/routeValidators").TravelModePropValidator;
-var EndpointType = require("../constant/routePlannerConstant").EndpointType;
-var conversions = require("../util/mapsApiConversions");
-var calculators = require("../util/routeCalculators");
-var parsers = require("../util/routeParsers");
-var notifications = require("../util/routeNotifications");
-var builders = require("../util/mapBuilders");
+const logger = require("../util/log").map;
+const TravelModePropValidator = require("../util/routeValidators").TravelModePropValidator;
+const EndpointType = require("../constant/routePlannerConstant").EndpointType;
+const conversions = require("../util/mapsApiConversions");
+const calculators = require("../util/routeCalculators");
+const parsers = require("../util/routeParsers");
+const notifications = require("../util/routeNotifications");
+const builders = require("../util/mapBuilders");
+const routeBuilders = require("../util/routeBuilders");
 
 
 /**
@@ -32,6 +34,7 @@ const Map = React.createClass({
         routes: React.PropTypes.array,
         onWaypointDelete: React.PropTypes.func,
         onRouteUpdate: React.PropTypes.func,
+        onFetchElevations: React.PropTypes.func,
         onNotification: React.PropTypes.func,
         onOpenEndpointSelectionDialog: React.PropTypes.func
     },
@@ -82,7 +85,7 @@ const Map = React.createClass({
         const waypoint = calculators.findWaypointWithinBounds(this.map, this.routes, mouseEvent);
 
         if (waypoint) {
-            this.props.onWaypointDelete(this.routes, waypoint);
+            this.props.onWaypointDelete(waypoint);
         }
     },
 
@@ -102,24 +105,86 @@ const Map = React.createClass({
         endpoint.setVisible(Boolean(point));
     },
 
+    _registerRoute: function (routeHash, isNewRoute) {
+        logger.debug("registering route", routeHash, "; is new:", isNewRoute);
+        const self = this;
+
+        const renderer = new google.maps.DirectionsRenderer(
+            builders.newDirectionsRendererOptions(this.map, !isNewRoute, !this.controlsDisabled)
+        );
+
+        this.directionsService.route(
+            self._buildRouteDefinition(routeHash),
+            function (result, status) {
+                const isOK = status === google.maps.DirectionsStatus.OK;
+                if (isOK) {
+                    renderer.setDirections(result);
+                }
+                else {
+                    logger.error(`the directions rendering failed with: ${status}`);
+                    notifications.routeError(self.props.onNotification, status);
+                }
+            }
+        );
+
+        const listener = renderer.addListener(
+            "directions_changed",
+            _.partial(this._onRouteChange, routeHash)
+        );
+
+        this.routesDirections[routeHash] = {
+            renderer: renderer,
+            listener: listener
+        };
+    },
+
+    _unregisterRoute: function (routeHash) {
+        logger.debug("unregistering route", routeHash);
+
+        const routeDirections = this.routesDirections[routeHash];
+        routeDirections.listener.remove();
+        routeDirections.renderer.setMap(null);
+
+        // remove the renderer and the listener for the route to unregister
+        this.routesDirections = _.omit(this.routesDirections, routeHash);
+    },
+
     /**
      * @desc Update the Google route when the route attributes (endpoints, waypoints, etc)
      *     change through the app and not through direct user interactions with the map/route.
      * @param {boolean} isNewRoute - whether this is the first route to render
+     * @param {boolean} forceRegister - force a re-registration of all routes
+     *    (eg. when the routes haven't changed, but the travel mode has)
      */
-    _route: function (isNewRoute) {
-        console.log("rendering routes");
+    _route: function (isNewRoute, forceRegister) {
+        logger.debug("rendering routes; isNewRoute:", isNewRoute,
+                     ", forceRegister:", forceRegister);
+
         if (this.props.isMapsApiLoaded) {
             const self = this;
             const newRouteHashes = _.pluck(this.routes, "hash");
             const oldRouteHashes = _.keys(this.routesDirections);
 
-            const deletedRouteHashes = _.without(oldRouteHashes, ...newRouteHashes);
+            const deletedRouteHashes = forceRegister
+                    ? oldRouteHashes
+                    : _.without(oldRouteHashes, ...newRouteHashes);
+            logger.debug("deleted routes: ", _.reduce(
+                deletedRouteHashes,
+                (memo, hash) => memo + ", " + hash,
+                    ""
+            ));
             _.each(deletedRouteHashes, function (hash) {
                 self._unregisterRoute(hash);
             });
 
-            const netNewRouteHashes = _.without(newRouteHashes, ...oldRouteHashes);
+            const netNewRouteHashes = forceRegister
+                    ? newRouteHashes
+                    : _.without(newRouteHashes, ...oldRouteHashes);
+            logger.debug("net new routes: ", _.reduce(
+                netNewRouteHashes,
+                (memo, hash) => memo + ", " + hash,
+                    ""
+            ));
             _.each(netNewRouteHashes, function (hash) {
                 self._registerRoute(hash, isNewRoute);
             });
@@ -134,44 +199,6 @@ const Map = React.createClass({
             }
         }
     },
-
-    /**
-     * @desc Replace the route with the given hash in the routes list with the supplied new route.
-     *    The routesDirections are updated accordingly.
-     *    This is just a hack, to avoid the route re-render when the route attributes
-     *    are pushed back as props to this component.
-     * @param {string} oldRouteHash - the hash of the route to replace
-     * @param {object} newRoute - the replacement
-     */
-    _replaceRoute: function (oldRouteHash, newRoute) {
-        const newRoutes = _.map(this.routes, function (r) {
-            return r.hash === oldRouteHash ? newRoute : r;
-        });
-        this.routes = newRoutes;
-
-        // since I cannot update the listener, I am going to remove the existing one
-        // and attach a new one with the correct callback
-        const routeDirections = this.routesDirections[oldRouteHash];
-        routeDirections.listener.remove();
-        routeDirections.listener = routeDirections.renderer.addListener(
-            "directions_changed",
-            _.partial(this._onRouteChange, newRoute.hash)
-        );
-
-        // re-add the routeDirections with the correct hash key
-        const newRoutesDirections = _.omit(this.routesDirections, oldRouteHash);
-        newRoutesDirections[newRoute.hash] = routeDirections;
-        this.routesDirections = newRoutesDirections;
-
-        // update the global start marker only if the first route changed
-        if (_.first(this.routes).hash === newRoute.hash) {
-            this._updateEndpoint(_.first, this.start);
-        }
-        // update the global finish marker only if the last route changed
-        if (_.last(this.routes).hash === newRoute.hash) {
-            this._updateEndpoint(_.last, this.finish);
-        }
-    },
     
     /**
      * @desc Listener to route change events, triggered by direct user interactions
@@ -179,26 +206,56 @@ const Map = React.createClass({
      * @param {string} routeHash - the hash of the changing route
      */
     _onRouteChange: function (routeHash) {
-        console.log("map: on route change:", routeHash);
-        console.log("map: routesDirections:", this.routesDirections);
+        logger.debug("map: on route change:", routeHash);
+        logger.debug("map: routesDirections:", this.routesDirections);
+
+        const oldRoute = _.find(this.routes, route => route.hash === routeHash);
 
         const newGoogleRoute = this.routesDirections[routeHash].renderer.getDirections().routes[0];
         const newRoute = conversions.convertGoogleRoute(newGoogleRoute);
 
-        // ignore the change if the updated route is identical to the original
-        if (newRoute.hash !== routeHash) {
-            // save this; I am going to need it later
-            const oldRoutes = this.routes;
+        let fetchElevations = false;
 
-            this._replaceRoute(routeHash, newRoute);
+        if (routeHash !== newRoute.hash) {
+            logger.debug("route hash changed; old:", routeHash, "; new:", newRoute.hash);
 
-            this.props.onRouteUpdate(routeHash, newRoute, this.routes);
+            // update the local route list, to avoid a renderer update (and another event cycle)
+            // when the new route list is sent to this component as prop
+            this.routes = _.map(this.routes, route => route.hash === routeHash ? newRoute : route);
 
-            if (oldRoutes.length === 1 && oldRoutes[0].points.length === 2 &&
-                    this.routes.length === 1 && this.routes[0].points.length === 3) {
-                notifications.firstWaypoint(this.props.onNotification);
+            this._unregisterRoute(routeHash);
+            this._registerRoute(newRoute.hash, false);
+
+            // update the start marker only if it is on this route
+            if (_.first(this.routes) === newRoute) {
+                this._updateEndpoint(_.first, this.start);
             }
+            // update the finish marker only if it is on this route
+            if (_.last(this.routes) === newRoute) {
+                this._updateEndpoint(_.last, this.finish);
+            }
+
+            this.props.onRouteUpdate(routeHash, newRoute);
         }
+        else if (oldRoute.distance !== newRoute.distance) {
+            logger.debug("route distance changed; old:", oldRoute.distance,
+                         "; new:", newRoute.distance);
+
+            // update the local route list, to avoid a renderer update (and another event cycle)
+            // when the new route list is sent to this component as prop
+            this.routes = _.map(this.routes, route => route.hash === routeHash ? newRoute : route);
+
+            this.props.onRouteUpdate(routeHash, newRoute);
+
+            // this is the last update on this route within this cycle
+            fetchElevation = true;
+        }
+        else {
+            // this is the last update on this route within this cycle
+            fetchElevation = true;
+        }
+
+        this.props.onFetchElevations(routeHash, newRoute.points);
     },
 
     /**
@@ -229,55 +286,8 @@ const Map = React.createClass({
     },
 
     _buildRouteDefinition: function (routeHash) {
-        const route = _.find(this.routes, function (r) {
-            return r.hash === routeHash;
-        });
-
+        const route = _.find(this.routes, r => r.hash === routeHash);
         return builders.newDirectionsRequest(route, this.travelMode);
-    },
-
-    _registerRoute: function (routeHash, isNewRoute) {
-        console.log("registering route", routeHash, "; is new:", isNewRoute);
-        const self = this;
-
-        const renderer = new google.maps.DirectionsRenderer(
-            builders.newDirectionsRendererOptions(this.map, !isNewRoute, !this.controlsDisabled)
-        );
-
-        this.directionsService.route(
-            self._buildRouteDefinition(routeHash),
-            function (result, status) {
-                const isOK = status === google.maps.DirectionsStatus.OK;
-                if (isOK) {
-                    renderer.setDirections(result);
-                }
-                else {
-                    console.log(`ERROR: the directions rendering failed with: ${status}`);
-                    notifications.routeError(self.props.onNotification, status);
-                }
-            }
-        );
-
-        const listener = renderer.addListener(
-            "directions_changed",
-            _.partial(this._onRouteChange, routeHash)
-        );
-
-        this.routesDirections[routeHash] = {
-            renderer: renderer,
-            listener: listener
-        };
-    },
-
-    _unregisterRoute: function (routeHash) {
-        console.log("unregistering route", routeHash);
-
-        const routeDirections = this.routesDirections[routeHash];
-        routeDirections.listener.remove();
-        routeDirections.renderer.setMap(null);
-
-        // remove the renderer and the listener for the route to unregister
-        this.routesDirections = _.omit(this.routesDirections, routeHash);
     },
 
     componentDidMount: function () {
@@ -302,11 +312,11 @@ const Map = React.createClass({
      * @param {object} nextProps - the next set of properties
      */
     componentWillReceiveProps: function (nextProps) {
-        console.log("map props:",
+        logger.debug("map props:",
                 ", travelMode:", this.travelMode,
                 ", routes:", this.routes,
                 ", controlsDisabled:", this.controlsDisabled);
-        console.log("map nextProps:",
+        logger.debug("map nextProps:",
                 ", travelMode:", nextProps.travelMode,
                 ", routes:", nextProps.routes,
                 ", controlsDisabled:", nextProps.controlsDisabled);
@@ -315,32 +325,33 @@ const Map = React.createClass({
 
         const isNewRoute = this.routeExists === false && nextProps.routeExists;
         const isRouteRemoved = this.routes.length > 0 && nextProps.routes.length === 0;
+        const isTravelModeChanged = _.isEqual(this.travelMode, nextProps.travelMode) === false;
 
         this.routeExists = nextProps.routeExists;
 
         let updateRoute = false;
 
-        if (_.isEqual(this.travelMode, nextProps.travelMode) === false) {
+        if (isTravelModeChanged) {
+            logger.debug("travel mode has changed");
             this.travelMode = nextProps.travelMode;
             updateRoute = true;
         }
 
-        const routesChanged = !parsers.areRoutesSame(this.routes, nextProps.routes);
-        if (routesChanged) {
-            console.log("routes have changed");
+        if (parsers.areRoutesSame(this.routes, nextProps.routes) === false) {
+            logger.debug("routes have changed");
             this.routes = nextProps.routes;
             updateRoute = true;
         }
+        /*
         const routeElevationsChanged = !parsers.areRoutesIdentical(this.routes, nextProps.routes);
         if (routeElevationsChanged) {
-            console.log("route elevations have changed");
+            logger.debug("route elevations have changed");
             this.routes = nextProps.routes;
         }
+        */
         
         if (updateRoute) {
-            console.log("RE-RENDER THE ROUTES");
-
-            this._route(isNewRoute);
+            this._route(isNewRoute, isTravelModeChanged);
 
             if (isRouteRemoved) {
                 notifications.mapReady(this.props.onNotification);
@@ -349,10 +360,9 @@ const Map = React.createClass({
 
         // disable/enable the routes if the flag changed
         if (this.controlsDisabled !== nextProps.controlsDisabled) {
-            console.log("DISABLE/ENABLE the routes:", nextProps.controlsDisabled);
+            logger.debug("DISABLE/ENABLE the routes:", nextProps.controlsDisabled);
             this.controlsDisabled = nextProps.controlsDisabled;
             _.each(this.routesDirections, function (routeDirections) {
-                // TODO distance
                 // TODO
                 /*
                 routeDirections.renderer.setOptions({

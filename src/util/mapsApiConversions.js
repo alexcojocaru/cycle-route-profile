@@ -3,6 +3,7 @@
 "use strict";
 
 var _ = require("underscore");
+const logger = require("../util/log").mapsApiConversions;
 var hashFunction = require("./hash").hashPoints;
 var TravelMode = require("../constant/routePlannerConstant").TravelMode;
 var calculators = require("./routeCalculators");
@@ -152,7 +153,7 @@ var convertSimpleTravelMode = function (travelMode) {
         case TravelMode.BICYCLE:
             return google.maps.TravelMode.BICYCLING;
         default:
-            console.log(`Invalid travel mode: ${travelMode}; this shouldn't have happened`);
+            logger.error(`Invalid travel mode: ${travelMode}; this shouldn't have happened`);
     }
 };
 module.exports.convertSimpleTravelMode = convertSimpleTravelMode;
@@ -172,7 +173,7 @@ var convertGoogleTravelMode = function (travelMode) {
         case google.maps.TravelMode.BICYCLING:
             return TravelMode.BICYCLE;
         default:
-            console.log(`Invalid travel mode: ${travelMode}; this shouldn't have happened`);
+            logger.error(`Invalid travel mode: ${travelMode}; this shouldn't have happened`);
     }
 };
 module.exports.convertGoogleTravelMode = convertGoogleTravelMode;

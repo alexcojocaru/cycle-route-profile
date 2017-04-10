@@ -23,6 +23,8 @@ var Tab = require("material-ui/Tabs").Tab;
 
 var queryString = require("query-string");
 
+var logger = require("./util/log").main;
+
 var NotificationPanel = require("./view/NotificationPanel.jsx");
 
 var store = require("./store/store");
@@ -58,6 +60,7 @@ var App = React.createClass({
                     distance: this.props.distance,
                     onWaypointDelete: this.routePlannerAction.deleteWaypoint,
                     onRouteUpdate: this.routePlannerAction.updateRoute,
+                    onFetchElevations: this.routePlannerAction.fetchElevations,
                     onExportGpx: this.routePlannerAction.exportGpx,
                     onRoutesDelete: this.routePlannerAction.deleteRoutes,
                     onTravelModeUpdate: this.routePlannerAction.updateTravelMode,
@@ -79,7 +82,7 @@ var App = React.createClass({
                 view = React.createElement(ElevationCalculatorView);
                 break;
             default:
-                console.log("Unknown view:", this.props.view);
+                logger.error("Unknown view:", this.props.view);
                 view = null;
         }
         return view;

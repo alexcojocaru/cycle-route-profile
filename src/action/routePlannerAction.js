@@ -5,7 +5,10 @@ const FileSaver = require("file-saver");
 const _ = require("underscore");
 
 const elevationAction = require("./elevationAction");
+const notificationAction = require("./notificationAction");
+const NotificationLevel = require("../constant/notificationConstant").Level;
 
+const builders = require("../util/routeBuilders");
 const formatters = require("../util/routeFormatters");
 const modifiers = require("../util/routeModifiers");
 const parsers = require("../util/routeParsers");
@@ -13,10 +16,8 @@ const parsers = require("../util/routeParsers");
 
 const Types = keyMirror({
     UPDATE_ENDPOINT: null,
-    // for route updates triggered by the app
-    UPDATE_ROUTE_INTERNAL: null,
-    // for route updates triggered by the Google APIs as result to user requests
-    UPDATE_ROUTE_EXTERNAL: null,
+    DELETE_WAYPOINT: null,
+    UPDATE_ROUTE: null,
     DELETE_ROUTES: null,
     EXPORT_GPX: null,
     UPDATE_TRAVEL_MODE: null,
@@ -25,7 +26,8 @@ const Types = keyMirror({
     TOGGLE_CONTROLS: null,
     DISABLE_CONTROLS: null,
     UPDATING_ELEVATIONS: null,
-    UPDATE_ELEVATIONS: null
+    UPDATE_ELEVATIONS: null,
+    FETCH_ELEVATIONS: null
 });
 module.exports.Types = Types;
 
@@ -42,50 +44,26 @@ module.exports.updateEndpoint = function (endpointType) {
 };
 
 /**
- * @param {route[]} routes - the route list to update
  * @param {waypoint} waypoint - the waypoint to delete
- * @return {object} - the update route internal action
+ * @return {object} - an update route action
  */
-module.exports.deleteWaypoint = function (routes, waypoint) {
-    const newRoutes = modifiers.deleteWaypoint(routes, waypoint);
+module.exports.deleteWaypoint = function (waypoint) {
     return {
-        type: Types.UPDATE_ROUTE_INTERNAL,
-        routes: newRoutes
+        type: Types.DELETE_WAYPOINT,
+        waypoint: waypoint
     };
 };
 
 /**
- * @param {string} [oldRouteHash] - the old hash of the updated route
- * @param {object} [route] - the updated route
- * @param {route[]} routes - the route list to update
- * @return {object} - the update route external action
+ * @param {string} oldRouteHash - the old hash of the new route
+ * @param {route} newRoute - the new route
+ * @return {object} - an update route action
  */
-module.exports.updateRoute = function (oldRouteHash, route, routes) {
-    return function (dispatch) {
-        const newRoutes = modifiers.updateRoutes(
-                oldRouteHash,
-                route,
-                routes);
-        dispatch({
-            type: Types.UPDATE_ROUTE_EXTERNAL,
-            routes: newRoutes
-        });
-
-        // just the routes which are new compared to the original route list
-        // or the routes which have incomplete elevations
-        const netNewRoutes = _.filter(newRoutes, newRoute => {
-            return parsers.findRoute(routes, newRoute.hash) === undefined ||
-                    parsers.isElevationIncomplete(newRoute);
-        });
-
-        // tell the app that we have that many routes being updated with elevations
-        dispatch({
-            type: Types.UPDATING_ELEVATIONS,
-            routeCount: netNewRoutes.length
-        });
-
-        // for each route which has changed, fetch the elevations
-        _.each(netNewRoutes, r => dispatch(elevationAction.fetch(r)));
+module.exports.updateRoute = function (oldRouteHash, newRoute) {
+    return {
+        type: Types.UPDATE_ROUTE,
+        oldRouteHash: oldRouteHash,
+        newRoute: newRoute
     };
 };
 
@@ -126,6 +104,23 @@ module.exports.toggleControls = function () {
 };
 
 /**
+ * @desc Fetch the elevation coordinates for the given points.
+ * @param {string} routeHash - the hash code of the route containing the given points
+ * @param {point[]} points - the points to fetch elevations for
+ * @return {object} - the action
+ */
+module.exports.fetchElevations = function (routeHash, points) {
+    return function (dispatch) {
+        dispatch({
+            type: Types.UPDATING_ELEVATIONS,
+            routeHash: routeHash
+        });
+
+        dispatch(elevationAction.fetch(routeHash, points));
+    };
+};
+
+/**
  * @desc Update the points on the given route with elevation coordinates.
  * @param {string} routeHash - the hash code of the route to update
  * @param {point[]} points - the list of points with elevation coordinates
@@ -134,7 +129,7 @@ module.exports.toggleControls = function () {
 module.exports.updateElevations = function (routeHash, points) {
     return {
         type: Types.UPDATE_ELEVATIONS,
-        hash: routeHash,
+        routeHash: routeHash,
         points: points
     };
 };

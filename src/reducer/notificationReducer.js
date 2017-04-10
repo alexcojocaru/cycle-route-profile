@@ -3,6 +3,7 @@
 const _ = require("underscore");
 const uuidV4 = require("uuid/v4");
 
+const logger = require("../util/log").notificationReducer;
 const ActionType = require("../action/notificationAction").Type;
 
 
@@ -41,7 +42,7 @@ const notificationReducer = function (state, action) {
             break;
         default:
     }
-    console.log("notification state:", nextState);
+    logger.debug("notification state:", nextState);
     return nextState;
 };
 

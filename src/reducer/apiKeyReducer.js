@@ -1,13 +1,14 @@
 "use strict";
 
-var _ = require("underscore");
-var ActionTypes = require("../action/apiKeyAction.js").Types;
+const _ = require("underscore");
+const logger = require("../util/log").elevationAction;
+const ActionTypes = require("../action/apiKeyAction.js").Types;
 
-var validateApiKey = function (key) {
+const validateApiKey = function (key) {
     return typeof key === "string" && key.length > 0;
 };
 
-var initialState = {
+const initialState = {
     key: "",  // the API key
     currentApiKey: "",
     isApiKeySaved: false,
@@ -16,8 +17,8 @@ var initialState = {
 };
 initialState.isApiKeyValid = validateApiKey(initialState.currentApiKey);
 
-var apiKeyReducer = function (state, action) {
-    var nextState = _.clone(state || initialState);
+const apiKeyReducer = function (state, action) {
+    const nextState = _.clone(state || initialState);
 
     switch (action.type) {
         case ActionTypes.UPDATE_API_KEY:
@@ -34,7 +35,7 @@ var apiKeyReducer = function (state, action) {
             break;
         default:
     }
-    console.log("api key state:", nextState);
+    logger.debug("api key state:", nextState);
     return nextState;
 };
 

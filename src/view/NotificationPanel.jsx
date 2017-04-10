@@ -4,6 +4,7 @@ var React = require("react");
 var _ = require("underscore");
 var NotificationSystem = require("react-notification-system");
 
+const logger = require("../util/log").notificationPanel;
 var Level = require("../constant/notificationConstant").Level;
 
 
@@ -36,7 +37,7 @@ var NotificationPanel = React.createClass({
             case Level.INFO:
                 return "info";
             default:
-                console.log(`Unknown notification level: ${notificationLevel}; default to INFO`);
+                logger.error(`Unknown notification level: ${notificationLevel}; default to INFO`);
                 return "info";
         }
     },

@@ -2,6 +2,7 @@
 
 var React = require("react");
 
+const logger = require("../util/log").routePlanner;
 var Map = require("./Map.jsx");
 var EndpointSelectionDialog = require("./EndpointSelectionDialog.jsx");
 var Sidebar = require("./Sidebar.jsx");
@@ -18,11 +19,11 @@ var RoutePlanner = React.createClass({
     },
 
     componentWillReceiveProps: function (nextProps) {
-        console.log("route planner nextProps.routeExists:", nextProps.routeExists); // eslint-disable-line indent
+        logger.debug("route planner nextProps.routeExists:", nextProps.routeExists);
     },
 
     render: function () {
-console.log("route planner render"); // eslint-disable-line indent
+        logger.debug("route planner render");
 
         return (
             <div id="route-planner">

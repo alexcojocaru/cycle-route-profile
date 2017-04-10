@@ -1,7 +1,7 @@
 "use strict";
 
-var NotificationLevel = require("../constant/notificationConstant").Level;
-var conversions = require("./mapsApiConversions");
+const NotificationLevel = require("../constant/notificationConstant").Level;
+const conversions = require("./mapsApiConversions");
 
 /**
  * @callback notificationCallback
