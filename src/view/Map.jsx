@@ -52,6 +52,7 @@ const Map = React.createClass({
     routesDirections: {},
     routeExists: false,
     routes: [],
+    disabled: false,
 
     /**
      * @desc When the user clicks on the map, if the start and the finish point are not set,
@@ -238,7 +239,7 @@ const Map = React.createClass({
         const self = this;
 
         const renderer = new google.maps.DirectionsRenderer(
-            builders.newDirectionsRendererOptions(this.map, !isNewRoute)
+            builders.newDirectionsRendererOptions(this.map, !isNewRoute, !this.disabled)
         );
 
         this.directionsService.route(
@@ -306,10 +307,12 @@ const Map = React.createClass({
     componentWillReceiveProps: function (nextProps) {
         console.log("map props:",
                 ", travelMode:", this.travelMode,
-                ", routes:", this.routes);
+                ", routes:", this.routes,
+                ", disabled:", this.disabled);
         console.log("map nextProps:",
                 ", travelMode:", nextProps.travelMode,
-                ", routes:", nextProps.routes);
+                ", routes:", nextProps.routes,
+                ", disabled:", nextProps.disabled);
 
         const self = this;
 
@@ -346,6 +349,17 @@ const Map = React.createClass({
             if (isRouteRemoved) {
                 notifications.mapReady(this.props.onNotification);
             }
+        }
+
+        // disable/enable the routes if the flag changed
+        if (this.disabled !== nextProps.disabled) {
+            console.log("DISABLE/ENABLE the routes");
+            this.disabled = nextProps.disabled;
+            _.each(this.routesDirections, function (routeDirections) {
+                routeDirections.renderer.setOptions({
+                    draggable: !self.disabled
+                });
+            });
         }
     },
 

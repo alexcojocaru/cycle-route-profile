@@ -31,7 +31,8 @@ const mapReady = function (notificationCallback) {
     notificationCallback(
         NotificationLevel.INFO,
         "Route",
-        "To build a new route, click on the map to select the start and the finish points."
+        "To build a new route, click on the map to select the start and the finish points.",
+        "abc"
     );
 };
 module.exports.mapReady = mapReady;

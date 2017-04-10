@@ -5,8 +5,6 @@ var applyMiddleware = require("redux").applyMiddleware;
 var combineReducers = require("redux").combineReducers;
 var thunk = require("redux-thunk").default;
 
-var routerReducer = require("react-router-redux").routerReducer;
-
 var containerReducer = require("../reducer/containerReducer");
 var apiKeyReducer = require("../reducer/apiKeyReducer");
 var routePlannerReducer = require("../reducer/routePlannerReducer");
@@ -19,8 +17,7 @@ var reducer = combineReducers({
     apiKey: apiKeyReducer,
     route: routePlannerReducer,
     elevationCalculator: elevationCalculatorReducer,
-    notification: notificationReducer,
-    routing: routerReducer
+    notification: notificationReducer
 });
 var store = createStore(
     reducer,

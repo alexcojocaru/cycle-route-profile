@@ -49,20 +49,19 @@ var NotificationPanel = React.createClass({
     _buildNotification: function (notification) {
         var level = this._getNotificationLevel(notification.level);
 
-        // keep errors until dismissed by user
-        var isPersistent = level === Level.ERROR;
+        // keep errors until dismissed by user;
+        // keep persistent notifications until dismissed by app
+        var isPersistent = (notification.level === Level.ERROR) || notification.persistent;
 
         return {
             level: level,
             title: notification.title,
             message: notification.message,
             position: "tr",
-            autoDismiss: isPersistent ? 0 : 5
+            dismissible: !notification.persistent,
+            autoDismiss: isPersistent ? 0 : 5,
+            uid: notification.id
         };
-    },
-    
-    componentDidMount: function () {
-        this._notificationSystem = this.refs.notificationSystem;
     },
 
     componentWillReceiveProps: function (nextProps) {
@@ -84,7 +83,7 @@ var NotificationPanel = React.createClass({
 
     render: function () {
         return (
-            <NotificationSystem ref="notificationSystem" />
+            <NotificationSystem ref={ ns => { this._notificationSystem = ns; }} />
         );
     }
 });

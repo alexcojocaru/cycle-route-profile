@@ -54,6 +54,7 @@ const routesToGpx = function (routes) {
         const points = google.maps.geometry.encoding.decodePath(route.path);
         _.each(points, function (point) {
             content.push(
+                // TODO elevations
 `
     <trkpt lat="${point.lat()}" lon="${point.lng()}" />`
             );

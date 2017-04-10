@@ -9,12 +9,21 @@ var Type = keyMirror({
 });
 module.exports.Type = Type;
 
-var addNotification = function (level, title, message) {
+/**
+ * @desc An add-notification action
+ * @param {string} level - the notification level
+ * @param {string} title - the notification title
+ * @param {string} message - the notification content
+ * @param {string} [id] - the notification id
+ * @return {object} the action object
+ */
+var addNotification = function (level, title, message, id) {
     return {
         type: Type.ADD_NOTIFICATION,
         level: level,
         title: title,
-        message: message
+        message: message,
+        id: id
     };
 };
 module.exports.addNotification = addNotification;

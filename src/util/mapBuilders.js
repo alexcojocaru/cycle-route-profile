@@ -101,12 +101,13 @@ module.exports.newDirectionsRequest = newDirectionsRequest;
  * @desc Create a new directions renderer options object.
  * @param {google.maps.Map} map - the map to render on
  * @param {boolean} preserveViewport - whether to preserve the viewport when rendering the route
+ * @param {boolean} draggable - whether to allow the route points to be dragged
  * @return {google.maps.DirectionsRendererOptions} - the directions renderer options
  */
-const newDirectionsRendererOptions = function (map, preserveViewport) {
+const newDirectionsRendererOptions = function (map, preserveViewport, draggable) {
     return {
         map: map,
-        draggable: true,
+        draggable: draggable,
         hideRouteList: true,
         suppressInfoWindows: true,
         preserveViewport: preserveViewport,

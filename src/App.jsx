@@ -63,7 +63,8 @@ var App = React.createClass({
                     onOpenEndpointSelectionDialog:
                         this.routePlannerAction.openEndpointSelectionDialog,
                     onCloseEndpointSelectionDialog:
-                        this.routePlannerAction.closeEndpointSelectionDialog
+                        this.routePlannerAction.closeEndpointSelectionDialog,
+                    disabled: this.props.disabled
                 };
                 view = React.createElement(RoutePlannerView, props);
                 break;
@@ -78,7 +79,9 @@ var App = React.createClass({
     },
 
     _updateContent: function (view) {
-        this.containerAction.updateView(view);
+        if (this.props.disabled === false) {
+            this.containerAction.updateView(view);
+        }
     },
 
     componentWillMount: function () {
@@ -155,6 +158,7 @@ App = ReactRedux.connect(function (state) {
         distance: state.route.distance,
         endpointSelectionDialogLocation: state.route.endpointSelectionDialogLocation,
         endpointSelectionDialogVisible: state.route.endpointSelectionDialogVisible,
+        disabled: state.route.disabled,
 
         notifications: state.notification.notifications
     };

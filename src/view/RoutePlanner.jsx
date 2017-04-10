@@ -28,7 +28,8 @@ var RoutePlanner = React.createClass({
         routeExists: React.PropTypes.bool,
         distance: React.PropTypes.number,
         onTravelModeUpdate: React.PropTypes.func,
-        onRoutesUpdate: React.PropTypes.func
+        onRoutesUpdate: React.PropTypes.func,
+        disabled: React.PropTypes.bool
     },
 
     _onDeleteRoutes: function () {
@@ -73,7 +74,8 @@ console.log("route planner render"); // eslint-disable-line indent
                     <Box>
                         <SelectField
                                 value={this.props.travelMode}
-                                onChange={this._onTravelModeUpdate}>
+                                onChange={this._onTravelModeUpdate}
+                                disabled={this.props.disabled}>
                             {
                                 _.map(TravelMode, function (name) {
                                     return (
@@ -93,7 +95,7 @@ console.log("route planner render"); // eslint-disable-line indent
                                 label="Delete route"
                                 onClick={this._onDeleteRoutes}
                                 title="Delete the current route"
-                                disabled={!this.props.routeExists}
+                                disabled={!this.props.routeExists || this.props.disabled}
                         />
                     </Box>
                     <Box px={2} auto={true}>
@@ -101,7 +103,7 @@ console.log("route planner render"); // eslint-disable-line indent
                                 label="Export GPX"
                                 onClick={this._onExportGpx}
                                 title="Export the current route as GPX"
-                                disabled={!this.props.routeExists}
+                                disabled={!this.props.routeExists || this.props.disabled}
                         />
                     </Box>
                     <Box pl={3}>

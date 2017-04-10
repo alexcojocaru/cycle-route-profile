@@ -40,7 +40,10 @@ const initialState = {
 
     // the (x, y) location of the endpoint selection dialog, inferred from the currentEndpointLocation
     endpointSelectionDialogLocation: { x: 0, y: 0 },
-    endpointSelectionDialogVisible: false
+    endpointSelectionDialogVisible: false,
+
+    // whether the controls are disabled (eg. while the elevations are being fetched)
+    disabled: false
 };
 
 /**

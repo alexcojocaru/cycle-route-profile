@@ -1,6 +1,6 @@
 {
   "name": "cycle-route-profile",
-  "version": "0.1.0-SNAPSHOT",
+  "version": "0.2.0-SNAPSHOT",
   "description": "Cycle route planner with elevation profile",
   "author": "Alex Cojocaru",
   "license": "MIT",
@@ -22,15 +22,14 @@
     "react-notification-system": "0.2.9",
     "react-portal-tooltip": "1.1.5",
     "react-redux": "4.4.6",
-    "react-router": "2.0.1",
-    "react-router-redux": "4.0.0",
     "react-tap-event-plugin": "2.0.1",
     "redux": "3.3.1",
     "redux-thunk": "2.0.1",
     "reflexbox": "2.2.3",
     "simplify-geojson": "1.0.2",
     "togeojson": "0.13.0",
-    "underscore": "1.8.3"
+    "underscore": "1.8.3",
+    "uuid": "^3.0.1"
   },
   "devDependencies": {
     "babel-core": "6.18.2",

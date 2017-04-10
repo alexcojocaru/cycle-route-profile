@@ -1,27 +1,29 @@
 "use strict";
 
-var _ = require("underscore");
+const _ = require("underscore");
+const uuidV4 = require("uuid/v4");
 
-var ActionType = require("../action/notificationAction").Type;
+const ActionType = require("../action/notificationAction").Type;
 
 
-var initialState = {
+const initialState = {
     notifications: []
 };
 
-var id = 0;
-
-var notificationReducer = function (state, action) {
-    var nextState = _.clone(state || initialState);
+const notificationReducer = function (state, action) {
+    const nextState = _.clone(state || initialState);
 
     switch (action.type) {
         case ActionType.ADD_NOTIFICATION:
             nextState.notifications = [
                 {
-                    id: id + 1,
+                    // use the provided id or generate a unique one
+                    id: action.id || uuidV4(),
                     level: action.level,
                     title: action.title,
-                    message: action.message
+                    message: action.message,
+                    // if the id is provided, the app will dismiss the action
+                    persistent: Boolean(action.id)
                 }
             ];
             break;
