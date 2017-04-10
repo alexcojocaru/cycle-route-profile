@@ -12,7 +12,6 @@
  * @property {point[]} points - array of route points
  * @property {string} hash - the route hash
  * @property {number} distance - the distance
- * @property {point[]} elevations - array of points with elevation coordinates;
  *    these are not necessary the same points as on the 'points' property
  * @property {string} path - the encoded route path;
  *    see https://developers.google.com/maps/documentation/utilities/polylinealgorithm
@@ -20,6 +19,7 @@
 
 const _ = require("underscore");
 
+const hash = require("../util/hash");
 const logger = require("../util/logger").logger("RoutePlannerReducer");
 const ActionTypes = require("../action/routePlannerAction").Types;
 const TravelMode = require("../constant/routePlannerConstant").TravelMode;
@@ -33,6 +33,11 @@ const initialState = {
     travelMode: TravelMode.ROAD,
     routeExists: false,
     routes: new Array(),
+
+    // the single elevations array across all routes
+    elevations: [],
+
+    // the total distance across all routes
     distance: 0,
 
     // the following two are just intermediate values, until both are set and the route is valid
@@ -52,9 +57,9 @@ const initialState = {
     controlsDisabled: false,
     controlsOpened: false,
 
-    // how many routes are being updated with elevation at a given time;
-    // used to re-enable the controls after the elevations for all new routes have been fetched
-    updatingRouteCount: 0
+    // how many elevations updates are being ran at one time;
+    // used to re-enable the controls after all elevations updates have finished
+    elevationsUpdatesCount: 0
 };
 
 const routePlannerReducer = function (state, action) {
@@ -123,19 +128,18 @@ const routePlannerReducer = function (state, action) {
             nextState.controlsDisabled = action.controlsDisabled;
             break;
         case ActionTypes.UPDATING_ELEVATIONS:
-            nextState.updatingRouteCount = nextState.updatingRouteCount + 1;
+            nextState.elevationsUpdatesCount = nextState.elevationsUpdatesCount + 1;
             nextState.controlsDisabled = true;
             break;
         case ActionTypes.UPDATE_ELEVATIONS:
-            nextState.routes = _.map(nextState.routes, route => {
-                const newRoute = builders.cloneRoute(route);
-                if (route.hash === action.routeHash) {
-                    newRoute.elevations = action.elevations;
-                }
-                return newRoute;
-            });
-            nextState.updatingRouteCount = nextState.updatingRouteCount - 1;
-            nextState.controlsDisabled = nextState.updatingRouteCount > 0;
+            nextState.elevationsUpdatesCount = nextState.elevationsUpdatesCount - 1;
+            nextState.controlsDisabled = nextState.elevationsUpdatesCount > 0;
+
+            // overwrite the elevations only if the new one corresponds to the current points list
+            if (action.pointsHash === hash.hashPoints(parsers.allPoints(nextState.routes))) {
+                nextState.elevations = action.elevations;
+            }
+
             break;
         default:
     }

@@ -255,9 +255,8 @@ const Map = React.createClass({
         }
 
         if (fetchElevations) {
-            logger.debug("Route", routeHash, "has settled down; fetching elevation for route:",
-                         routeHash);
-            this.props.onFetchElevations(routeHash, newRoute.points);
+            logger.debug("Route", routeHash, "has settled down; fetching elevations");
+            this.props.onFetchElevations(parsers.allPoints(this.routes));
         }
     },
 

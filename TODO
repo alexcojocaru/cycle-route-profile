@@ -7,3 +7,11 @@ do I stil need promises? If no, remove the polyfill from App.jsx and package.jso
 
 update the max route point count / split route point count in routeModifiers
 
+reset the log levels in logger.js
+
+catch the expired API key error and display a message in the UI
+
+the chart continues until the last vertical grid line (eg. 3k)
+and doesn't end at the last point (eg. 2.6k)
+
+the horizontal scale should display a tick at the last point

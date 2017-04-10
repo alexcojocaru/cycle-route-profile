@@ -4,6 +4,7 @@ var React = require("react");
 
 const logger = require("../util/logger").logger("RoutePlanner");
 var Map = require("./Map.jsx");
+var ElevationChart = require("./ElevationChart.jsx");
 var EndpointSelectionDialog = require("./EndpointSelectionDialog.jsx");
 var Sidebar = require("./Sidebar.jsx");
 
@@ -28,6 +29,7 @@ var RoutePlanner = React.createClass({
         return (
             <div id="route-planner">
                 <Map ref={ map => { this.map = map; } } {...this.props} />
+                <ElevationChart {...this.props} />
                 <EndpointSelectionDialog {...this.props} />
                 <Sidebar {...this.props} />
             </div>

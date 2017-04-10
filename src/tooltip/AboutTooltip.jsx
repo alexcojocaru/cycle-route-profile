@@ -3,7 +3,7 @@
 var React = require("react");
 var Tooltip = require("react-portal-tooltip");
 
-var RoutePlannerTooltip = React.createClass({
+var AboutTooltip = React.createClass({
     _showTooltip: function () {
         this.setState({ tooltipActive: true });
     },
@@ -18,10 +18,12 @@ var RoutePlannerTooltip = React.createClass({
         };
     },
 
+    // TODO fix the description
+
     render: function () {
         return (
             <div>
-                <img id="helpTooltip"
+                <img id="aboutTooltip"
                         width="18"
                         src={require("../images/tooltip.svg")}
                         onMouseEnter={this._showTooltip}
@@ -29,18 +31,11 @@ var RoutePlannerTooltip = React.createClass({
                 <Tooltip active={this.state.tooltipActive}
                         position="right"
                         arrow="top"
-                        parent="#helpTooltip">
+                        parent="#aboutTooltip">
                     <div style={{ maxWidth: "400px" }}>
-                        Once you enter the API key and load the map, left click on the map
-                        to choose the start and the end points of the route.
-                        The page will draw the route between the two selected points
-                        with the travel mode selected in the drop down above.
+                        About
                         <br /><br />
-                        Drag any point on the route (in blue) to add a waypoint.
-                        To drag the end points (start and finish), drag the white dot
-                        and not the green/red marker.
-                        <br /><br />
-                        Click on a waypoint to delete it.
+                        me
                     </div>
                 </Tooltip>
             </div>
@@ -48,4 +43,4 @@ var RoutePlannerTooltip = React.createClass({
     }
 });
 
-module.exports = RoutePlannerTooltip;
+module.exports = AboutTooltip;

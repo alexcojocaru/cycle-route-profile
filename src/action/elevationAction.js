@@ -4,6 +4,7 @@
 const keyMirror = require("fbjs/lib/keyMirror");
 const _ = require("underscore");
 
+const hash = require("../util/hash");
 const FetchStatus = require("../constant/elevationConstant").FetchStatus;
 const notificationAction = require("./notificationAction");
 const NotificationLevel = require("../constant/notificationConstant").Level;
@@ -71,12 +72,11 @@ Error message: ${errorMessage}`));
 
 /**
  * @desc fetch the elevation coordinates for the given points.
- * @param {string} routeHash - the hash of the route containing the given points
  * @param {point[]} points - the points to fetch elevations for
  * @return {function} - an action
  */
-module.exports.fetch = function (routeHash, points) {
-    logger.debug("Fetching elevations for route:", routeHash);
+module.exports.fetch = function (points) {
+    logger.debug("Fetching elevations");
     return function (dispatch) {
         dispatchProgressNotifications(dispatch);
 
@@ -86,11 +86,15 @@ module.exports.fetch = function (routeHash, points) {
          * - 512 locations per request
          * - 50 requests per second
          */
+        logger.trace("Sending get-elevations request");
         const elevator = new google.maps.ElevationService();
         elevator.getElevationAlongPath({
             path: _.map(points, point => new google.maps.LatLng(point.lat, point.lng)),
-            samples: 256
+            samples: 512
         }, function (results, status) {
+            logger.trace("Received get-elevations response; status:", status,
+                         "; results:", results);
+
             let elevations = [];
 
             if (status === google.maps.ElevationStatus.OK) {
@@ -100,7 +104,7 @@ module.exports.fetch = function (routeHash, points) {
                     return {
                         lat: result.location.lat(),
                         lng: result.location.lng(),
-                        ele: result.elevation.toFixed(2)
+                        ele: Math.round(result.elevation * 100) / 100
                     };
                 });
             }
@@ -108,7 +112,9 @@ module.exports.fetch = function (routeHash, points) {
                 dispatchErrorNotifications(dispatch, status);
             }
 
-            dispatch(routePlannerAction.updateElevations(routeHash, elevations));
+            const pointsHash = hash.hashPoints(points);
+
+            dispatch(routePlannerAction.updateElevations(pointsHash, elevations));
         });
     };
 };

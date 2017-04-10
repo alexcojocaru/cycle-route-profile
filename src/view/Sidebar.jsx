@@ -13,6 +13,7 @@ var AppBar = require("material-ui/AppBar").default;
 
 var SidebarButton = require("./SidebarButton.jsx");
 var RoutePlannerTooltip = require("../tooltip/RoutePlannerTooltip.jsx");
+var AboutTooltip = require("../tooltip/AboutTooltip.jsx");
 var TravelMode = require("../constant/routePlannerConstant").TravelMode;
 var TravelModeLabel = require("../constant/routePlannerConstant").TravelModeLabel;
 var TravelModePropValidator = require("../util/routeValidators").TravelModePropValidator;
@@ -117,6 +118,16 @@ var Sidebar = React.createClass({
                         </Box>
                         <Box>
                             <RoutePlannerTooltip />
+                        </Box>
+                    </Flex>
+                    <Flex py={2} align="center">
+                        <Box>
+                            <span className="label" style={{ fontWeight: "bold" }}>
+                                About
+                            </span>
+                        </Box>
+                        <Box>
+                            <AboutTooltip />
                         </Box>
                     </Flex>
                 </Flex>

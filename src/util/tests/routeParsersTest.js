@@ -61,57 +61,30 @@ describe("routeParsers", function () {
         });
     });
 
-    describe("identical routes", function () {
-        it("identical routes", function () {
-            const points = [
-                { lat: 35.35, lng: 25.25, ele: 15.15 },
-                { lat: 34.34, lng: 24.24, ele: 14.14 }
-            ];
+    describe("all points", function () {
+        it("all points", function () {
             const routes = [
                 {
-                    points: points,
-                    hash: hashPoints(points)
-                }
-            ];
-
-            const otherPoints = [
-                { lat: 35.35, lng: 25.25, ele: 15.15 },
-                { lat: 34.34, lng: 24.24, ele: 14.14 }
-            ];
-            const otherRoutes = [
+                    points: [
+                        { lat: 35.35, lng: 25.25, ele: 15.15 },
+                        { lat: 34.34, lng: 24.24, ele: 14.14 }
+                    ],
+                    hash: "not-used"
+                },
                 {
-                    points: otherPoints,
-                    hash: hashPoints(otherPoints)
+                    points: [
+                        { lat: 34.34, lng: 24.24, ele: 14.14 },
+                        { lat: 33.33, lng: 23.23, ele: 14.14 }
+                    ],
+                    hash: "not-used"
                 }
             ];
 
-            expect(parsers.areRoutesIdentical(routes, otherRoutes)).toBeTruthy();
-        });
-
-        it("disimilar routes", function () {
-            const points = [
+            expect(parsers.allPoints(routes)).toEqual([
                 { lat: 35.35, lng: 25.25, ele: 15.15 },
-                { lat: 34.34, lng: 24.24, ele: 14.14 }
-            ];
-            const routes = [
-                {
-                    points: points,
-                    hash: hashPoints(points)
-                }
-            ];
-
-            const otherPoints = [
-                { lat: 35.35, lng: 25.25, ele: 15.15 },
+                { lat: 34.34, lng: 24.24, ele: 14.14 },
                 { lat: 33.33, lng: 23.23, ele: 14.14 }
-            ];
-            const otherRoutes = [
-                {
-                    points: otherPoints,
-                    hash: hashPoints(otherPoints)
-                }
-            ];
-
-            expect(parsers.areRoutesIdentical(routes, otherRoutes)).toBeFalsy();
+            ]);
         });
     });
 });

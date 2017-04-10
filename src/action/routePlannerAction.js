@@ -99,31 +99,30 @@ module.exports.toggleControls = function () {
 
 /**
  * @desc Fetch the elevation coordinates for the given points.
- * @param {string} routeHash - the hash code of the route containing the given points
- * @param {point[]} points - the points to fetch elevations for
+ * @param {point[]} points - the points
  * @return {object} - the action
  */
-module.exports.fetchElevations = function (routeHash, points) {
+module.exports.fetchElevations = function (points) {
     return function (dispatch) {
         dispatch({
-            type: Types.UPDATING_ELEVATIONS,
-            routeHash: routeHash
+            type: Types.UPDATING_ELEVATIONS
         });
 
-        dispatch(elevationAction.fetch(routeHash, points));
+        dispatch(elevationAction.fetch(points));
     };
 };
 
 /**
- * @desc Update the elevations coordinates on the given route.
- * @param {string} routeHash - the hash code of the route to update
- * @param {point[]} elevations - the list of points with elevation coordinates
+ * @desc Update the elevations coordinates across all routes.
+ * @param {string} pointsHash - the hash of the points list used to fetch the elevations coordinates
+ *    (NB: those points are not the same - in terms of lat&lng - as in the elevations array)
+ * @param {point[]} elevations - the elevations corresponding to the given points
  * @return {object} - the action
  */
-module.exports.updateElevations = function (routeHash, elevations) {
+module.exports.updateElevations = function (pointsHash, elevations) {
     return {
         type: Types.UPDATE_ELEVATIONS,
-        routeHash: routeHash,
+        pointsHash: pointsHash,
         elevations: elevations
     };
 };

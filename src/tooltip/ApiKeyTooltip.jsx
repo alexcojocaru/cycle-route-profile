@@ -34,8 +34,8 @@ var ApiKeyTooltip = React.createClass({
                         The page uses
                         the <a href="https://developers.google.com/maps/documentation/javascript/" target="_blank">
                             Google Maps APIs
-                        </a> to display the map, to build the route and to calculate
-                        the elevation profile. Since a free account can make a limited number
+                        </a> to display the map, to build the route and to get the elevation data.
+                        Since a free account can make a limited number
                         of API requests, I cannot configure this page to use a global account,
                         and hence you need to configure it with your own account.
                         <br />
@@ -43,7 +43,8 @@ var ApiKeyTooltip = React.createClass({
                         To create a free Google Maps APIs
                         account, <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">
                             get an API key
-                        </a>, then enter it in the field on the left.
+                        </a>, then enter it in the field on the left and click 'Load'
+                        to load the Google Map.
                         <br />
                         <br />
                         <strong>Your API key is not stored, not sent to any service other than
