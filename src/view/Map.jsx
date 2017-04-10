@@ -356,16 +356,15 @@ const Map = React.createClass({
 
         // disable/enable the routes if the flag changed
         if (this.controlsDisabled !== nextProps.controlsDisabled) {
-            logger.debug("DISABLE/ENABLE the routes:", nextProps.controlsDisabled);
+            logger.debug("DISABLE the route directions:", nextProps.controlsDisabled);
             this.controlsDisabled = nextProps.controlsDisabled;
-            _.each(this.routesDirections, function (routeDirections) {
-                // TODO
-                /*
-                routeDirections.renderer.setOptions({
-                    draggable: !self.controlsDisabled
-                });
-                */
-            });
+            // TODO the directions cannot be made draggable after they were made non draggable
+            // (google bug?)
+            // _.each(this.routesDirections, function (routeDirections) {
+            //     routeDirections.renderer.setOptions({
+            //         draggable: !self.controlsDisabled
+            //     });
+            // });
         }
     },
 

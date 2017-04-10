@@ -1,12 +1,7 @@
 TODO
 ====
 
-the distance attribute when splitting a route doesn't get updated
-distance attribute of each route
-re-enable controls after fetching elevations
-get elevation along path; elevation is broken for some points
-
-move the blue tabs to the toggle panel
+Disable the Google route directions while the elevations are being fetched.
 
 do I stil need promises? If no, remove the polyfill from App.jsx and package.json
 
