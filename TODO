@@ -1,0 +1,5 @@
+todo
+
+remove all console.log statements
+remove the hardcoded API key from apiKeyReducer
+support for > 8 waypoints

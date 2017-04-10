@@ -1,0 +1,106 @@
+{
+  "name": "cycle-route-profile",
+  "version": "0.1.0-SNAPSHOT",
+  "description": "Cycle route planner with elevation profile",
+  "author": "Alex Cojocaru",
+  "license": "MIT",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexcojocaru/cycle-route-profile.git"
+  },
+  "dependencies": {
+    "fbjs": "0.7.2",
+    "material-ui": "0.16.4",
+    "object-hash": "1.1.5",
+    "query-string": "4.3.0",
+    "react": "15.4.1",
+    "react-addons-test-utils": "15.4.1",
+    "react-dom": "15.4.1",
+    "react-notification-system": "0.2.9",
+    "react-portal-tooltip": "1.1.5",
+    "react-redux": "4.4.6",
+    "react-router": "2.0.1",
+    "react-router-redux": "4.0.0",
+    "react-tap-event-plugin": "2.0.1",
+    "redux": "3.3.1",
+    "redux-thunk": "2.0.1",
+    "reflexbox": "2.2.3",
+    "simplify-geojson": "1.0.2",
+    "togeojson": "0.13.0"
+  },
+  "devDependencies": {
+    "babel-core": "6.18.2",
+    "babel-eslint": "7.1.1",
+    "babel-jest": "17.0.2",
+    "babel-loader": "6.2.8",
+    "babel-preset-es2015": "6.18.0",
+    "babel-preset-jest": "16.0.0",
+    "babel-preset-react": "6.16.0",
+    "clean-webpack-plugin": "0.1.3",
+    "css-loader": "0.26.0",
+    "eslint": "3.11.1",
+    "eslint-loader": "1.6.1",
+    "eslint-plugin-import": "2.2.0",
+    "eslint-plugin-react": "6.7.1",
+    "extract-text-webpack-plugin": "1.0.1",
+    "file-loader": "0.9.0",
+    "html-webpack-plugin": "2.9.0",
+    "identity-obj-proxy": "3.0.0",
+    "jest-cli": "17.0.2",
+    "node-sass": "3.13.0",
+    "react-hot-loader": "1.3.1",
+    "rimraf": "2.5.4",
+    "sass-loader": "3.1.2",
+    "style-loader": "0.13.1",
+    "underscore": "1.8.3",
+    "webpack": "1.12.13",
+    "webpack-babel-jest": "1.0.4",
+    "webpack-dev-server": "1.14.1"
+  },
+  "engines": {
+    "node": ">= 6.9.x"
+  },
+  "jest": {
+    "rootDir": "./",
+    "testRunner": "jasmine2",
+    "transformIgnorePatterns": [
+      "<rootDir>/node_modules"
+    ],
+    "moduleFileExtensions": [
+      "js",
+      "jsx"
+    ],
+    "moduleDirectories": [
+      "node_modules"
+    ],
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/fileMock.js",
+      "\\.(css|less)$": "identity-obj-proxy"
+    },
+    "unmockedModulePathPatterns": [
+      "<rootDir>/src/util/TestUtils.js",
+      "<rootDir>/node_modules"
+    ],
+    "testRegex": "/tests/[^/]+\\.(js|jsx)$",
+    "testPathIgnorePatterns": [
+      "<rootDir>/node/",
+      "<rootDir>/yarn/",
+      "<rootDir>/node_modules/",
+      "<rootDir>/.*/tests/coverage/",
+      "<rootDir>/build/",
+      "<rootDir>/dist/"
+    ],
+    "automock": true,
+    "timers": "fake",
+    "resetModules": true
+  },
+  "scripts": {
+    "build": "webpack -p --progress --colors --config webpack.config.js",
+    "lint": "eslint --ext .js,.jsx .",
+    "test": "jest",
+    "verify": "npm run lint && npm run test",
+    "start": "webpack-dev-server -d --port 8080 --hot --inline --progress --colors --config webpack.dev.config.js",
+    "clean-after": "node ./clean-after.js"
+  }
+}
