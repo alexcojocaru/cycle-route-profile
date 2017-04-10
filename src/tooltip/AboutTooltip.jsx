@@ -18,9 +18,8 @@ var AboutTooltip = React.createClass({
         };
     },
 
-    // TODO fix the description
-
     render: function () {
+        // TODO double check the project URL
         return (
             <div>
                 <img id="aboutTooltip"
@@ -33,9 +32,12 @@ var AboutTooltip = React.createClass({
                         arrow="top"
                         parent="#aboutTooltip">
                     <div style={{ maxWidth: "400px" }}>
-                        About
+                        <strong>Cycle Route Planner</strong>
                         <br /><br />
-                        me
+                        For details, see
+                        the <a href="https://github.com/alexcojocaru/cycle-route-planner" target="_blank">
+                            project page
+                        </a> on GitHub.
                     </div>
                 </Tooltip>
             </div>

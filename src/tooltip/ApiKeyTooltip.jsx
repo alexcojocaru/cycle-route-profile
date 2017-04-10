@@ -36,18 +36,31 @@ var ApiKeyTooltip = React.createClass({
                             Google Maps APIs
                         </a> to display the map, to build the route and to get the elevation data.
                         Since a free account can make a limited number
-                        of API requests, I cannot configure this page to use a global account,
+                        of API requests, I cannot configure this application to use a global account,
                         and hence you need to configure it with your own account.
                         <br />
                         <br />
-                        To create a free Google Maps APIs
-                        account, <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">
-                            get an API key
-                        </a>, then enter it in the field on the left and click 'Load'
+                        To get a free Google Maps API key, follow these steps:
+                        <ol>
+                            <li>
+                                Go to the <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">
+                                    Get API Key
+                                </a> page.
+                            </li>
+                            <li>
+                                Click the <strong>GET A KEY</strong> button
+                                (which will ask you to sign in if you are not).
+                            </li>
+                            <li>
+                                Create a new project (name it anyway you want) and enable the API on it.
+                            </li>
+                        </ol>
+                        Once the API key has been generated, copy and paste it
+                        into the field on the left and click <strong>LOAD MAP</strong> on the right
                         to load the Google Map.
                         <br />
                         <br />
-                        <strong>Your API key is not stored, not sent to any service other than
+                        <strong>Your API key is not stored, nor sent to any service other than
                             the Google Maps APIs service.</strong>
                     </div>
                 </Tooltip>

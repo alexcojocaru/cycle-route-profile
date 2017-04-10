@@ -98,7 +98,6 @@ const routePlannerReducer = function (state, action) {
             nextState.routes = modifiers.deleteWaypoint(nextState.routes, action.waypoint);
             break;
         case ActionTypes.UPDATE_ROUTE:
-            // TODO if the first point on a route gets moved, the routes are not reconnected
             newRoutes = _.map(nextState.routes, route => {
                 return route.hash === action.oldRouteHash ? action.newRoute : route;
             });
@@ -109,6 +108,7 @@ const routePlannerReducer = function (state, action) {
             nextState.routes = [];
             nextState.routeExists = false;
             nextState.distance = 0;
+            nextState.elevations = [];
             break;
         case ActionTypes.UPDATE_TRAVEL_MODE:
             nextState.travelMode = action.mode;

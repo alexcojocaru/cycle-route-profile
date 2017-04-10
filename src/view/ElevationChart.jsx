@@ -5,32 +5,44 @@ const Line = require("./chart/ChartJs.jsx");
 const _ = require("underscore");
 
 const logger = require("../util/logger").logger("ElevationChart");
+const hashFull = require("../util/hash").hashFullPoints;
 
 
 const ElevationChart = React.createClass({
     propTypes: {
-        routes: React.PropTypes.array
+        elevations: React.PropTypes.array,
+        distance: React.PropTypes.number
     },
 
     shouldComponentUpdate: function (nextProps) {
-        // TODO avoid rendering while elevations are being fetched
-        return true;
+        return nextProps.controlsDisabled === false
+                && (this.props.elevations.length !== nextProps.elevations.length
+                    || hashFull(this.props.elevations) !== hashFull(nextProps.elevations));
     },
 
     // TODO
-    // avoid rendering the chart if the data is empty, to avoid the initial error
+    // allow dragging the horizontal separator between the map and the chart
+    // disable the tooltip on points, and instead display a fixed tooltip in the top left/right corner
+    // refactor / move code to helpers
+    //      add tests
     // handle event:
     //   - on mouse move along line, move the waypoint on the route
     //   - on mouse move along the route, move the point on the chart line
-    // export to PNG or open in new window
-    // refactor / move code to helpers
-    // disable the tooltip on points, and instead display a fixed tooltip in the top left/right corner
     // fix the grade calculation - it's too extreme
+    //      calculate the true distance between two points based on their geo coordinates
 
     render: function () {
-        logger.debug("elevation chart render");
+        logger.debug("elevation chart render; props:", this.props);
 
         const self = this;
+
+        if (_.isEmpty(this.props.elevations)) {
+            return (
+                <div id="elevation-chart">
+                    <div style={{ height: `${chartHeight}px` }}></div>
+                </div>
+            );
+        }
 
         const gradeColors = {
             // 9% and above grade
@@ -52,7 +64,6 @@ const ElevationChart = React.createClass({
         // the distance between the equidistant points in the elevations list
         const segmentLength = this.props.distance / (this.props.elevations.length - 1);
 
-        // TODO set x as the distance, not the index
         const elevations = _.map(this.props.elevations, (point, index) => {
             return { x: index * segmentLength, y: point.ele }
         });
@@ -134,6 +145,30 @@ const ElevationChart = React.createClass({
             }]
         };
 
+        const availableStepSize = [
+            100000,
+            50000,
+            25000,
+            20000,
+            10000,
+            5000,
+            2500,
+            2000,
+            1000,
+            500
+        ];
+
+        let xAxesStepSize;
+        // find a good step size for horizontal ticks/gridlines,
+        // so that we have at least 7 of them on the x axis;
+        // the last one is used as default if none of the previous ones match
+        for (let stepSizeIndex = 0; stepSizeIndex < availableStepSize.length; stepSizeIndex++) {
+            xAxesStepSize = availableStepSize[stepSizeIndex];
+            if (this.props.distance / xAxesStepSize > 7) {
+                break;
+            }
+        }
+
         const options = {
             responsive: true,
             maintainAspectRatio: false,
@@ -187,8 +222,27 @@ const ElevationChart = React.createClass({
                         drawBorder: false
                     },
                     ticks: {
-                        callback: distance => `${Math.round(distance / 100) / 10}k`
+                        min: 0,
+                        max: this.props.distance,
+                        stepSize: xAxesStepSize,
+                        callback: (distance, index, distances) => {
+                            // if this is the second last item,
+                            // and the distance between this and the last item is less than 1/4 of step size,
+                            // hide it
+                            const label = `${Math.round(distance / 100) / 10}k`;
+                            if (distances.length <= 1) {
+                                return label;
+                            }
+                            else {
+                                const stepSize = distances[1] - distances[0];
+                                return distance === _.last(_.initial(distances)) && (_.last(distances) - distance) <= stepSize / 4
+                                        ? ""
+                                        : label;
+                            }
+                        }
                     },
+                    // No need for the override below; setting the ticks.max has the same effect
+                    /*
                     afterBuildTicks: scale => {
                         // replace the last tick (which is past the last chart point)
                         // with a tick right on the last chart point
@@ -196,6 +250,7 @@ const ElevationChart = React.createClass({
                             scale.ticks[scale.ticks.length - 1] = this.props.distance;
                         }
                     },
+                    */
                 }],
                 yAxes: [{
                     type: "linear",
@@ -217,7 +272,7 @@ const ElevationChart = React.createClass({
 
         return (
             <div id="elevation-chart">
-                <Line data={lineData} options={options} height={200} redraw={true} />
+                <Line data={lineData} options={options} redraw={true} />
             </div>
         );
     }
