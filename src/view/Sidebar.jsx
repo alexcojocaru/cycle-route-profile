@@ -57,6 +57,89 @@ var Sidebar = React.createClass({
         }
     },
 
+    _routePlannerPanel: function () {
+        return (
+            this.props.view === ViewType.ROUTE_PLANNER &&
+            <Box auto={true}>
+                <Flex column={true} px={2} py={2}>
+                    <Box>
+                        <span className="label">Travel mode:</span>
+                    </Box>
+                    <Box>
+                        <SelectField
+                                value={this.props.travelMode}
+                                onChange={this._onTravelModeUpdate}
+                                disabled={this.props.controlsDisabled}>
+                            {
+                                _.map(TravelMode, function (name) {
+                                    return (
+                                        <MenuItem
+                                                value={name}
+                                                key={name}
+                                                primaryText={TravelModeLabel[name]}
+                                        />
+                                    );
+                                })
+                            }
+                        </SelectField>
+                    </Box>
+                    <Box py={2}>
+                        <span className="label">Distance:</span>
+                        {formatters.formatDistance(this.props.distance)}
+                    </Box>
+                    <Box py={2}>
+                        <RaisedButton
+                                label="Delete route"
+                                onClick={this.props.onRoutesDelete}
+                                title="Delete the current route"
+                                disabled={
+                                    !this.props.routeExists ||
+                                        this.props.controlsDisabled
+                                }
+                        />
+                    </Box>
+                    <Box py={2}>
+                        <RaisedButton
+                                label="Export GPX"
+                                onClick={this._onExportGpx}
+                                title="Export the current route as GPX"
+                                disabled={
+                                    !this.props.routeExists ||
+                                        this.props.controlsDisabled
+                                }
+                        />
+                    </Box>
+                    <Flex py={2} align="center">
+                        <Box>
+                            <span className="label" style={{ fontWeight: "bold" }}>
+                                Help
+                            </span>
+                        </Box>
+                        <Box>
+                            <RoutePlannerTooltip />
+                        </Box>
+                    </Flex>
+                </Flex>
+            </Box>
+        );
+    },
+
+    _elevationCalculatorPanel: function () {
+        return (
+            this.props.view === ViewType.ELEVATION_CALCULATOR &&
+            <Box auto={true}>
+                <Flex column={true} px={2} py={2}>
+                    <Box>
+                        <span className="label">Work in progress:</span>
+                    </Box>
+                    <Box>
+                        <span className="label">Work in progress</span>
+                    </Box>
+                </Flex>
+            </Box>
+        );
+    },
+
     render: function () {
         const sidebarClassnames = classnames({
             "verticalSidebarButtonContainer": true,
@@ -73,86 +156,11 @@ var Sidebar = React.createClass({
                             <Box>
                                 <AppBar title="Route Planner"/>
                             </Box>
-                            {
-                                this.props.view === ViewType.ROUTE_PLANNER &&
-                                <Box auto={true}>
-                                    <Flex column={true} px={2} py={2}>
-                                        <Box>
-                                            <span className="label">Travel mode:</span>
-                                        </Box>
-                                        <Box>
-                                            <SelectField
-                                                    value={this.props.travelMode}
-                                                    onChange={this._onTravelModeUpdate}
-                                                    disabled={this.props.controlsDisabled}>
-                                                {
-                                                    _.map(TravelMode, function (name) {
-                                                        return (
-                                                            <MenuItem
-                                                                    value={name}
-                                                                    key={name}
-                                                                    primaryText={TravelModeLabel[name]}
-                                                            />
-                                                        );
-                                                    })
-                                                }
-                                            </SelectField>
-                                        </Box>
-                                        <Box py={2}>
-                                            <span className="label">Distance:</span>
-                                            {formatters.formatDistance(this.props.distance)}
-                                        </Box>
-                                        <Box py={2}>
-                                            <RaisedButton
-                                                    label="Delete route"
-                                                    onClick={this.props.onRoutesDelete}
-                                                    title="Delete the current route"
-                                                    disabled={
-                                                        !this.props.routeExists ||
-                                                            this.props.controlsDisabled
-                                                    }
-                                            />
-                                        </Box>
-                                        <Box py={2}>
-                                            <RaisedButton
-                                                    label="Export GPX"
-                                                    onClick={this._onExportGpx}
-                                                    title="Export the current route as GPX"
-                                                    disabled={
-                                                        !this.props.routeExists ||
-                                                            this.props.controlsDisabled
-                                                    }
-                                            />
-                                        </Box>
-                                        <Flex py={2} align="center">
-                                            <Box>
-                                                <span className="label" style={{ fontWeight: "bold" }}>
-                                                    Help
-                                                </span>
-                                            </Box>
-                                            <Box>
-                                                <RoutePlannerTooltip />
-                                            </Box>
-                                        </Flex>
-                                    </Flex>
-                                </Box>
-                            }
+                            { this._routePlannerPanel() }
                             <Box>
                                 <AppBar title="Elevation Calculator" />
                             </Box>
-                            {
-                                this.props.view === ViewType.ELEVATION_CALCULATOR &&
-                                <Box auto={true}>
-                                    <Flex column={true} px={2} py={2}>
-                                        <Box>
-                                            <span className="label">Work in progress:</span>
-                                        </Box>
-                                        <Box>
-                                            <span className="label">Work in progress</span>
-                                        </Box>
-                                    </Flex>
-                                </Box>
-                            }
+                            { this._elevationCalculatorPanel() }
                         </Flex>
                     </div>
                 }

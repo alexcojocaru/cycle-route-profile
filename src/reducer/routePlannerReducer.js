@@ -61,6 +61,7 @@ const routePlannerReducer = function (state, action) {
     logger.debug("current planner state:", state, "; action:", action);
 
     const nextState = _.clone(state || initialState);
+    let newRoutes;
 
     switch (action.type) {
         case ActionTypes.UPDATE_ENDPOINT:
@@ -93,7 +94,7 @@ const routePlannerReducer = function (state, action) {
             break;
         case ActionTypes.UPDATE_ROUTE:
             // TODO if the first point on a route gets moved, the routes are not reconnected
-            const newRoutes = _.map(nextState.routes, route => {
+            newRoutes = _.map(nextState.routes, route => {
                 return route.hash === action.oldRouteHash ? action.newRoute : route;
             });
             nextState.routes = modifiers.normalizeRoutes(newRoutes, nextState.routes);

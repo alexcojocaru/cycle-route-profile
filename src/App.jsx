@@ -18,9 +18,6 @@ var getMuiTheme = require("material-ui/styles").getMuiTheme;
 var lightBaseTheme = require("material-ui/styles").lightBaseTheme;
 var injectTapEventPlugin = require("react-tap-event-plugin");
 
-var Tabs = require("material-ui/Tabs").Tabs;
-var Tab = require("material-ui/Tabs").Tab;
-
 var queryString = require("query-string");
 
 var logger = require("./util/logger").logger("App");

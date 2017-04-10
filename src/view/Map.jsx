@@ -12,7 +12,6 @@ const calculators = require("../util/routeCalculators");
 const parsers = require("../util/routeParsers");
 const notifications = require("../util/routeNotifications");
 const builders = require("../util/mapBuilders");
-const routeBuilders = require("../util/routeBuilders");
 
 
 /**
@@ -168,10 +167,10 @@ const Map = React.createClass({
             const deletedRouteHashes = forceRegister
                     ? oldRouteHashes
                     : _.without(oldRouteHashes, ...newRouteHashes);
-            logger.debug("deleted routes: ", _.reduce(
+            logger.debug("deleted routes:", _.reduce(
                 deletedRouteHashes,
-                (memo, hash) => memo + ", " + hash,
-                    ""
+                (memo, hash) => memo === "" ? hash : `${memo}, ${hash}`,
+                ""
             ));
             _.each(deletedRouteHashes, function (hash) {
                 self._unregisterRoute(hash);
@@ -180,10 +179,10 @@ const Map = React.createClass({
             const netNewRouteHashes = forceRegister
                     ? newRouteHashes
                     : _.without(newRouteHashes, ...oldRouteHashes);
-            logger.debug("net new routes: ", _.reduce(
+            logger.debug("net new routes:", _.reduce(
                 netNewRouteHashes,
-                (memo, hash) => memo + ", " + hash,
-                    ""
+                (memo, hash) => memo === "" ? hash : `${memo}, ${hash}`,
+                ""
             ));
             _.each(netNewRouteHashes, function (hash) {
                 self._registerRoute(hash, isNewRoute);
@@ -256,7 +255,8 @@ const Map = React.createClass({
         }
 
         if (fetchElevations) {
-            logger.debug("Route", routeHash, "has settled down; fetching elevation for route:", routeHash);
+            logger.debug("Route", routeHash, "has settled down; fetching elevation for route:",
+                         routeHash);
             this.props.onFetchElevations(routeHash, newRoute.points);
         }
     },
@@ -323,8 +323,6 @@ const Map = React.createClass({
                 ", travelMode:", nextProps.travelMode,
                 ", routes:", nextProps.routes,
                 ", controlsDisabled:", nextProps.controlsDisabled);
-
-        const self = this;
 
         const isNewRoute = this.routeExists === false && nextProps.routeExists;
         const isRouteRemoved = this.routes.length > 0 && nextProps.routes.length === 0;

@@ -242,7 +242,7 @@ const reconnectRoutes = function (routes, oldRoutes) {
 /**
  * @desc normalize the route list and return a new list.
  * @param {route[]} routes - the route list to normalize
- * @param {route[]} - oldRoutes - the old route list to use as reference (mainly for reconnecting)
+ * @param {route[]} oldRoutes - the old route list to use as reference (mainly for reconnecting)
  * @return {route[]} - the new route list
  */
 const normalizeRoutes = function (routes, oldRoutes) {
