@@ -23,7 +23,7 @@ var Tab = require("material-ui/Tabs").Tab;
 
 var queryString = require("query-string");
 
-var logger = require("./util/logger").main;
+var logger = require("./util/logger").logger("App");
 
 var NotificationPanel = require("./view/NotificationPanel.jsx");
 
@@ -53,6 +53,8 @@ var App = React.createClass({
         switch (this.props.view) {
             case ViewType.ROUTE_PLANNER:
                 var props = {
+                    view: this.props.view,
+                    onViewUpdate: this.containerAction.updateView,
                     isMapsApiLoaded: this.props.isMapsApiLoaded,
                     travelMode: this.props.travelMode,
                     routeExists: this.props.routeExists,
@@ -86,12 +88,6 @@ var App = React.createClass({
                 view = null;
         }
         return view;
-    },
-
-    _updateContent: function (view) {
-        if (this.props.controlsDisabled === false) {
-            this.containerAction.updateView(view);
-        }
     },
 
     componentWillMount: function () {
@@ -141,10 +137,6 @@ var App = React.createClass({
                             onChange={this.apiKeyAction.updateApiKey}
                             onLoadMap={this._loadMap}
                     />
-                    <Tabs value={this.props.view} onChange={this._updateContent}>
-                        <Tab label="Route Planner" value={ViewType.ROUTE_PLANNER} />
-                        <Tab label="Elevation Calculator" value={ViewType.ELEVATION_CALCULATOR} />
-                    </Tabs>
                     {this._buildContent()}
                 </div>
             </MuiThemeProvider>
