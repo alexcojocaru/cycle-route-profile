@@ -1,36 +1,43 @@
 "use strict";
 
-/* global google:true*/
-
 var _ = require("underscore");
 var conversions = require("./mapsApiConversions");
 
+var isWaypointWithinBounds = function (map, mapRect, waypoint, mouseEvent) {
+    const waypointPosition = conversions.convertSimpleCoordinateToScreen(map, waypoint);
+
+    // calculate the distance from the location of the event to the current waypoint;
+    // the waypoint position is within the map bounds,
+    // whereas the mouse event position is within the window bounds
+    const distance = Math.sqrt(
+        Math.pow(waypointPosition.x + mapRect.left - mouseEvent.clientX, 2) +
+        Math.pow(waypointPosition.y + mapRect.top - mouseEvent.clientY, 2)
+    );
+
+    return distance <= 5; // this is the radius (in pixels) of the waypoint marker
+};
+
 /**
- * @descr find the waypoint within a 5px radius of the given mouse event location
+ * @descr find the waypoint (not global start, nor global finish)
+ *    within a 5px radius of the given mouse event location
  * @param {google.maps.Map} map - the Google Map object
- * @param {array} waypoints - the list of waypoints to search
+ * @param {array} routes - the list of routes to search
  * @param {MouseEvent} mouseEvent - the Google mouse event
  * @return {object} - the first waypoint within range or null
  */
-var findWaypointWithinBounds = function (map, waypoints, mouseEvent) {
+var findWaypointWithinBounds = function (map, routes, mouseEvent) {
+    // all waypoints (except for the global start and finish points) into a flat array
+    const waypoints = _.initial(_.rest(
+        _.flatten(_.pluck(routes, "points"))
+    ));
+
     const mapRect = map.getDiv().getBoundingClientRect();
 
-    // find the waypoint under the mouse event, if any
-    const match = _.find(waypoints, function (waypoint) {
-        const waypointPosition = conversions.convertSimpleCoordinateToScreen(map, waypoint);
-
-        // calculate the distance from the location of the event to the current waypoint;
-        // the waypoint position is within the map bounds,
-        // whereas the mouse event position is within the window bounds
-        const distance = Math.sqrt(
-            Math.pow(waypointPosition.x + mapRect.left - mouseEvent.clientX, 2) +
-            Math.pow(waypointPosition.y + mapRect.top - mouseEvent.clientY, 2)
-        );
-
-        return distance <= 5; // this is the radius (in pixels) of the waypoint marker
+    const result = _.find(waypoints, function (waypoint) {
+        return isWaypointWithinBounds(map, mapRect, waypoint, mouseEvent);
     });
 
-    return match;
+    return result;
 };
 module.exports.findWaypointWithinBounds = findWaypointWithinBounds;
 
@@ -67,7 +74,7 @@ module.exports.mergeRouteLegs = mergeRouteLegs;
  * @param {google.maps.DirectionsRoute} route - a google route
  * @return {number} - the total distance in meters
  */
-var totalDistance = function(route) {
+var totalDistance = function (route) {
     const overallDistance = _.reduce(
         route.legs,
         function (distance, leg) {

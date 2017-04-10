@@ -1915,6 +1915,10 @@ file-loader@0.9.0:
   dependencies:
     loader-utils "~0.2.5"
 
+file-saver@1.3.3:
+  version "1.3.3"
+  resolved "https://registry.npmjs.org/file-saver/-/file-saver-1.3.3.tgz#cdd4c44d3aa264eac2f68ec165bc791c34af1232"
+
 filename-regex@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npmjs.org/filename-regex/-/filename-regex-2.0.0.tgz#996e3e80479b98b9897f15a8a58b3d084e926775"
@@ -2192,8 +2196,8 @@ har-validator@~2.0.6:
     pinkie-promise "^2.0.0"
 
 harmony-reflect@^1.4.6:
-  version "1.5.0"
-  resolved "https://registry.npmjs.org/harmony-reflect/-/harmony-reflect-1.5.0.tgz#fbcc7c6ba2ddb5ea94da23934d677bb020a4187c"
+  version "1.5.1"
+  resolved "https://registry.npmjs.org/harmony-reflect/-/harmony-reflect-1.5.1.tgz#b54ca617b00cc8aef559bbb17b3d85431dc7e329"
 
 has-ansi@^2.0.0:
   version "2.0.0"

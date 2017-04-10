@@ -1,7 +1,6 @@
 "use strict";
 
 var React = require("react");
-var FlatButton = require("material-ui/FlatButton").default;
 var RaisedButton = require("material-ui/RaisedButton").default;
 var TextField = require("material-ui/TextField").default;
 var Box = require("reflexbox").Box;
@@ -45,7 +44,7 @@ var ApiKey = React.createClass({
                             value={this.props.apiKey}
                             onChange={this._onChange}
                             disabled={this.props.isMapsApiLoaded}
-                            style = {{width: 380}}
+                            style = {{ width: 380 }}
                     />
                 </Box>
                 <Box>

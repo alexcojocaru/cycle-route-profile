@@ -83,7 +83,7 @@
 		"max-depth": [2, 5],
 		"max-len": [
 			2,
-			120,
+			100,
 			4,
 			{
 				"ignoreComments": true,

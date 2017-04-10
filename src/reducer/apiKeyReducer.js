@@ -4,7 +4,7 @@ var _ = require("underscore");
 var ActionTypes = require("../action/apiKeyAction.js").Types;
 
 var validateApiKey = function (key) {
-    return typeof(key) === "string" && key.length > 0;
+    return typeof key === "string" && key.length > 0;
 };
 
 var initialState = {

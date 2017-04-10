@@ -50,20 +50,20 @@ var App = React.createClass({
                     isMapsApiLoaded: this.props.isMapsApiLoaded,
                     travelMode: this.props.travelMode,
                     routeExists: this.props.routeExists,
-                    start: this.props.start,
-                    finish: this.props.finish,
-                    waypoints: this.props.waypoints,
+                    routes: this.props.routes,
                     distance: this.props.distance,
-                    onEndpointUpdate: this.routePlannerAction.updateEndpoint,
-                    onWaypointsUpdate: this.routePlannerAction.updateWaypoints,
+                    onWaypointDelete: this.routePlannerAction.deleteWaypoint,
                     onRouteUpdate: this.routePlannerAction.updateRoute,
+                    onRoutesDelete: this.routePlannerAction.deleteRoutes,
                     onTravelModeUpdate: this.routePlannerAction.updateTravelMode,
                     onNotification: this.notificationAction.addNotification,
                     endpointSelectionDialogVisible: this.props.endpointSelectionDialogVisible,
                     endpointSelectionDialogLocation: this.props.endpointSelectionDialogLocation,
                     onUpdateEndpoint: this.routePlannerAction.updateEndpoint,
-                    onOpenEndpointSelectionDialog: this.routePlannerAction.openEndpointSelectionDialog,
-                    onCloseEndpointSelectionDialog: this.routePlannerAction.closeEndpointSelectionDialog
+                    onOpenEndpointSelectionDialog:
+                        this.routePlannerAction.openEndpointSelectionDialog,
+                    onCloseEndpointSelectionDialog:
+                        this.routePlannerAction.closeEndpointSelectionDialog
                 };
                 view = React.createElement(RoutePlannerView, props);
                 break;
@@ -113,8 +113,6 @@ var App = React.createClass({
     },
 
     render: function () {
-        var self = this;
-
         return (
             <MuiThemeProvider muiTheme={getMuiTheme(lightBaseTheme)}>
                 <div>
@@ -153,9 +151,7 @@ App = ReactRedux.connect(function (state) {
 
         travelMode: state.route.travelMode,
         routeExists: state.route.routeExists,
-        start: state.route.start,
-        finish: state.route.finish,
-        waypoints: state.route.waypoints,
+        routes: state.route.routes,
         distance: state.route.distance,
         endpointSelectionDialogLocation: state.route.endpointSelectionDialogLocation,
         endpointSelectionDialogVisible: state.route.endpointSelectionDialogVisible,

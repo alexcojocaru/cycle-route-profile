@@ -27,8 +27,8 @@ var RoutePlannerTooltip = React.createClass({
                         onMouseEnter={this._showTooltip}
                         onMouseLeave={this._hideTooltip} />
                 <Tooltip active={this.state.tooltipActive}
-                        position="bottom"
-                        arrow="right"
+                        position="left"
+                        arrow="top"
                         parent="#helpTooltip">
                     <div style={{ maxWidth: "400px" }}>
                         Once you enter the API key and load the map, click on it

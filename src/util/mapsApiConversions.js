@@ -1,9 +1,11 @@
-"use strict";
-
 /* global google:true*/
 
+"use strict";
+
 var _ = require("underscore");
+var hashFunction = require("object-hash");
 var TravelMode = require("../constant/routePlannerConstant").TravelMode;
+var calculators = require("./routeCalculators");
 
 /**
  * @desc convert a Google LatLng coordinate to an on-screen coordinate in pixels
@@ -43,19 +45,30 @@ module.exports.convertSimpleCoordinateToScreen = convertSimpleCoordinateToScreen
  * @desc convert the given Google coordinate to a simple coordinate
  *     The Google Maps API must be loaded for this function to work.
  * @param {google.maps.LatLng} coordinate - the Google LatLng coordinate
- * @return {object} coordinate - the simple coordinate in {lat, lng} format
+ * @return {object} - the simple coordinate in {lat, lng} format
  */
 var convertGoogleCoordinateToSimple = function (coordinate) {
     return {
         lat: coordinate.lat(),
         lng: coordinate.lng()
     };
-}
+};
 module.exports.convertGoogleCoordinateToSimple = convertGoogleCoordinateToSimple;
 
 /**
+ * @desc convert the given simple coordinate to a Google coordinate
+ *     The Google Maps API must be loaded for this function to work.
+ * @param {object} coordinate - the simple coordinate in {lat, lng} format
+ * @return {google.maps.LatLng} - the Google LatLng coordinate
+ */
+var convertSimpleCoordinateToGoogle = function (coordinate) {
+    return new google.maps.LatLng(coordinate);
+};
+module.exports.convertSimpleCoordinateToGoogle = convertSimpleCoordinateToGoogle;
+
+/**
  * @desc convert the given screen location relative to the given map element
- *     to a screen location relative to the top left corner of the viewport.
+ *     to an absolute screen location (relative to the top left corner of the viewport).
  *     The Google Maps API must be loaded for this function to work.
  * @param {google.maps.MapElement} mapElement - the Google Map element
  * @param {google.maps.Point} relativeLocation - the on-screen location relative to the map
@@ -67,7 +80,7 @@ var convertRelativeLocationToAbsolute = function (mapElement, relativeLocation) 
         x: mapRect.left + relativeLocation.x,
         y: mapRect.top + relativeLocation.y
     };
-}
+};
 module.exports.convertRelativeLocationToAbsolute = convertRelativeLocationToAbsolute;
 
 /**
@@ -82,7 +95,7 @@ var convertGoogleCoordinateToAbsolute = function (map, coordinate) {
     return convertRelativeLocationToAbsolute(
             map.getDiv(),
             convertGoogleCoordinateToScreen(map, coordinate));
-}
+};
 module.exports.convertGoogleCoordinateToAbsolute = convertGoogleCoordinateToAbsolute;
 
 /**
@@ -138,7 +151,7 @@ var convertSimpleTravelMode = function (travelMode) {
         case TravelMode.BICYCLE:
             return google.maps.TravelMode.BICYCLING;
         default:
-            console.log("Invalid travel mode:", travelMode, "; this shouldn't have happened");
+            console.log(`Invalid travel mode: ${travelMode}; this shouldn't have happened`);
     }
 };
 module.exports.convertSimpleTravelMode = convertSimpleTravelMode;
@@ -158,7 +171,7 @@ var convertGoogleTravelMode = function (travelMode) {
         case google.maps.TravelMode.BICYCLING:
             return TravelMode.BICYCLE;
         default:
-            console.log("Invalid travel mode:", travelMode, "; this shouldn't have happened");
+            console.log(`Invalid travel mode: ${travelMode}; this shouldn't have happened`);
     }
 };
 module.exports.convertGoogleTravelMode = convertGoogleTravelMode;
@@ -175,7 +188,7 @@ var convertSimpleWaypointList = function (waypoints, stopover = false) {
         function (waypoint) {
             return {
                 location: new google.maps.LatLng(waypoint),
-                stopover: false
+                stopover: stopover
             };
         }
     );
@@ -196,3 +209,22 @@ var convertGoogleWaypointList = function (waypoints) {
     });
 };
 module.exports.convertGoogleWaypointList = convertGoogleWaypointList;
+
+/**
+ * @desc Build a simple route out of the given Google route
+ * @param {object} googleRoute - the Google route
+ * @return {object} - the simple route
+ */
+var convertGoogleRoute = function (googleRoute) {
+    const distance = calculators.totalDistance(googleRoute);
+    const points = calculators.mergeRouteLegs(googleRoute);
+    const path = googleRoute.overview_polyline;
+    const route = {
+        points: points,
+        hash: hashFunction(points),
+        distance: distance,
+        path: path
+    };
+    return route;
+};
+module.exports.convertGoogleRoute = convertGoogleRoute;

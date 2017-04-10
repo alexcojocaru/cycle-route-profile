@@ -1,7 +1,6 @@
 "use strict";
 
 var React = require("react");
-var Grid = require("reflexbox").Grid;
 var Flex = require("reflexbox").Flex;
 var Box = require("reflexbox").Box;
 var Paper = require("material-ui/Paper").default;
@@ -16,7 +15,6 @@ var RoutePointSelection = React.createClass({
     propTypes: {
         endpointSelectionDialogVisible: React.PropTypes.bool,
         endpointSelectionDialogLocation: React.PropTypes.object,
-        onOpenEndpointSelectionDialog: React.PropTypes.func,
         onCloseEndpointSelectionDialog: React.PropTypes.func,
         onUpdateEndpoint: React.PropTypes.func
     },
@@ -64,9 +62,9 @@ var RoutePointSelection = React.createClass({
 
         return (
             <Paper style={style} transitionEnabled={false}>
-                <div ref={ (container) => { this.container = container; }}>
+                <div ref={ container => { this.container = container; } }>
                     <Flex pb={2} align="center">
-                        <Box auto>
+                        <Box auto={true}>
                             <span className="dialogTitle">Endpoint selection</span>
                         </Box>
                         <Box>

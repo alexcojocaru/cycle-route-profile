@@ -5,7 +5,6 @@ var _ = require("underscore");
 var Box = require("reflexbox").Box;
 var Flex = require("reflexbox").Flex;
 var RaisedButton = require("material-ui/RaisedButton").default;
-var FlatButton = require("material-ui/FlatButton").default;
 var MenuItem = require("material-ui/MenuItem").default;
 var SelectField = require("material-ui/SelectField").default;
 
@@ -29,13 +28,18 @@ var RoutePlanner = React.createClass({
         routeExists: React.PropTypes.bool,
         distance: React.PropTypes.number,
         onTravelModeUpdate: React.PropTypes.func,
-        onRouteUpdate: React.PropTypes.func,
+        onRoutesUpdate: React.PropTypes.func
     },
 
-    _onDeleteRoute: function () {
+    _onDeleteRoutes: function () {
         if (this.props.routeExists) {
-            this.refs.map._resetMap();
-            this.props.onRouteUpdate(null, null, [], 0);
+            this.props.onRoutesDelete();
+        }
+    },
+
+    _onExportGpx: function () {
+        if (this.props.routeExists) {
+            this.map._exportGpx();
         }
     },
 
@@ -84,22 +88,30 @@ console.log("route planner render"); // eslint-disable-line indent
                         </SelectField>
                     </Box>
                     { this._buildDistanceComponent() }
-                    <Box px={2} auto>
+                    <Box px={2}>
                         <RaisedButton
                                 label="Delete route"
-                                onClick={this._onDeleteRoute}
+                                onClick={this._onDeleteRoutes}
                                 title="Delete the current route"
                                 disabled={!this.props.routeExists}
                         />
                     </Box>
+                    <Box px={2} auto={true}>
+                        <RaisedButton
+                                label="Export GPX"
+                                onClick={this._onExportGpx}
+                                title="Export the current route as GPX"
+                                disabled={!this.props.routeExists}
+                        />
+                    </Box>
                     <Box pl={3}>
-                        <span className="label" style={{fontWeight: "bold"}}>Help</span>
+                        <span className="label" style={{ fontWeight: "bold" }}>Help</span>
                     </Box>
                     <Box>
                         <RoutePlannerTooltip />
                     </Box>
                 </Flex>
-                <Map ref="map" {...this.props} />
+                <Map ref={ map => { this.map = map; } } {...this.props} />
                 <EndpointSelectionDialog {...this.props} />
             </div>
         );

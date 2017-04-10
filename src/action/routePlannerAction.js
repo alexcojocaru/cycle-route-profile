@@ -5,8 +5,10 @@ var keyMirror = require("fbjs/lib/keyMirror");
 
 var Types = keyMirror({
     UPDATE_ENDPOINT: null,
-    UPDATE_WAYPOINTS: null,
+    DELETE_WAYPOINT: null,
     UPDATE_ROUTE: null,
+    DELETE_ROUTES: null,
+    EXPORT_GPX: null,
     UPDATE_TRAVEL_MODE: null,
     OPEN_ENDPOINT_SELECTION_DIALOG: null,
     CLOSE_ENDPOINT_SELECTION_DIALOG: null
@@ -14,36 +16,47 @@ var Types = keyMirror({
 module.exports.Types = Types;
 
 /**
- * @param {string} endpointType - the type of endpoint to update
- * @param {object} [point] - the point to update
+ * @param {string} endpointType - the type of endpoint to update;
+ *    the endpoint location should have been cached already
  * @return {object} - the update endpoint action
  */
-module.exports.updateEndpoint = function (endpointType, point) {
+module.exports.updateEndpoint = function (endpointType) {
     return {
         type: Types.UPDATE_ENDPOINT,
-        endpointType: endpointType,
-        point: point
+        endpointType: endpointType
     };
 };
 
 /**
- * @param {array} waypoints - an array of waypoints, in {lat, lng} format
- * @return {object} - the update waypoints action
+ * @param {waypoint} waypoint - the waypoint to delete
+ * @return {object} - the delete waypoint action
  */
-module.exports.updateWaypoints = function (waypoints) {
+module.exports.deleteWaypoint = function (waypoint) {
     return {
-        type: Types.UPDATE_WAYPOINTS,
-        waypoints: waypoints
+        type: Types.DELETE_WAYPOINT,
+        waypoint: waypoint
     };
 };
 
-module.exports.updateRoute = function (start, finish, waypoints, distance) {
+/**
+ * @param {string} [oldRouteHash] - the old hash of the updated route
+ * @param {object} [route] - the updated route
+ * @return {object} - the update route action
+ */
+module.exports.updateRoute = function (oldRouteHash, route) {
     return {
         type: Types.UPDATE_ROUTE,
-        start: start,
-        finish: finish,
-        waypoints: waypoints,
-        distance: distance
+        oldRouteHash: oldRouteHash,
+        route: route
+    };
+};
+
+/**
+ * @return {object} - the delete routes action
+ */
+module.exports.deleteRoutes = function () {
+    return {
+        type: Types.DELETE_ROUTES
     };
 };
 

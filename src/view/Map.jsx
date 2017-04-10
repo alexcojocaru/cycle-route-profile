@@ -3,15 +3,15 @@
 
 var React = require("react");
 var _ = require("underscore");
-var keyMirror = require("fbjs/lib/keyMirror");
+var FileSaver = require("file-saver");
 
-var TravelMode = require("../constant/routePlannerConstant").TravelMode;
 var TravelModePropValidator = require("../util/routeValidators").TravelModePropValidator;
+var EndpointType = require("../constant/routePlannerConstant").EndpointType;
 var conversions = require("../util/mapsApiConversions");
 var calculators = require("../util/routeCalculators");
+var formatters = require("../util/routeFormatters");
 var notifications = require("../util/routeNotifications");
-
-var NotificationLevel = require("../constant/notificationConstant").Level;
+var builders = require("../util/mapBuilders");
 
 
 /**
@@ -23,33 +23,35 @@ var NotificationLevel = require("../constant/notificationConstant").Level;
  *   The waypoint management is done by the Google API, and  a listener will keep the app store
  *   up to date.
  */
-var Map = React.createClass({
+const Map = React.createClass({
 
     // this component only takes callbacks as props, it stores everything else internally
     propTypes: {
         isMapsApiLoaded: React.PropTypes.bool,
         travelMode: TravelModePropValidator,
         routeExists: React.PropTypes.bool,
-        start: React.PropTypes.object,
-        finish: React.PropTypes.object,
-        waypoints: React.PropTypes.array,
+        routes: React.PropTypes.array,
+        onWaypointDelete: React.PropTypes.func,
         onRouteUpdate: React.PropTypes.func,
-        onWaypointsUpdate: React.PropTypes.func,
-        onNotification: React.PropTypes.func
+        onNotification: React.PropTypes.func,
+        onOpenEndpointSelectionDialog: React.PropTypes.func
     },
 
     // the following are instance variables which will be used internally;
     // define them here for the sake of reference
+    travelMode: null,
     map: null,
     mapDomClickListener: null,
     mapGoogleClickListener: null,
     directionsService: null,
-    directionsRenderer: null,
-    directionsListener: null,
-    routeExists: false,
+    // special markers to help differentiate the global start/finish visually from the other points
     start: null,
     finish: null,
-    waypoints: [],
+    // a map of route hashes to renderer and listener objects
+    // eg: { 123: { renderer: r1, listener: l1 }, abc: { renderer: r2, listener: l2 } }
+    routesDirections: {},
+    routeExists: false,
+    routes: [],
 
     /**
      * @desc When the user clicks on the map, if the start and the finish point are not set,
@@ -77,264 +79,123 @@ var Map = React.createClass({
      * @param {MouseEvent} mouseEvent - the Google mouse event
      */
     _onMapDomClick: function (mouseEvent) {
-        const waypoint = calculators.findWaypointWithinBounds(this.map, this.waypoints, mouseEvent);
+        const waypoint = calculators.findWaypointWithinBounds(this.map, this.routes, mouseEvent);
 
         if (waypoint) {
-            const waypoints = _.without(this.waypoints, waypoint);
-            this.props.onWaypointsUpdate(waypoints);
+            this.props.onWaypointDelete(waypoint);
         }
+    },
+
+    /**
+     * @desc Update the given endpoint marker to coincide
+     *    with the point on the route found by the finder function.
+     * @param {function} finder - the finder function to be applied on the route list
+     *    and on the point list
+     * @param {google.maps.Marker} endpoint - the marker to update
+     */
+    _updateEndpoint: function (finder, endpoint) {
+        const route = finder(this.routes);
+        const point = route && finder(route.points);
+        if (point) {
+            endpoint.setPosition(conversions.convertSimpleCoordinateToGoogle(point));
+        }
+        endpoint.setVisible(Boolean(point));
     },
 
     /**
      * @desc Update the Google route when the route attributes (endpoints, waypoints, etc)
      *     change through the app and not through direct user interactions with the map/route.
+     * @param {boolean} isNewRoute - whether this is the first route to render
      */
-    _route: function () {
-        if (this.props.isMapsApiLoaded && this.start && this.finish) {
+    _route: function (isNewRoute) {
+        console.log("rendering routes");
+        if (this.props.isMapsApiLoaded) {
             const self = this;
+            const newRouteHashes = _.pluck(this.routes, "hash");
+            const oldRouteHashes = _.keys(this.routesDirections);
 
-            const start = new google.maps.LatLng(self.start);
-            const finish = new google.maps.LatLng(self.finish);
-            const waypoints = conversions.convertSimpleWaypointList(self.waypoints);
-
-            this.directionsService.route({
-                origin: start,
-                destination: finish,
-                waypoints: waypoints,
-                avoidTolls: true,
-                avoidHighways: true,
-                optimizeWaypoints: false,
-                unitSystem: google.maps.UnitSystem.METRIC,
-                travelMode: conversions.convertSimpleTravelMode(self.travelMode)
-            }, function (result, status) {
-                const isOK = status === google.maps.DirectionsStatus.OK;
-                if (isOK) {
-                    self.directionsRenderer.setDirections(result);
-                }
-                else {
-                    self.props.onNotification(
-                        NotificationLevel.ERROR,
-                        "Route",
-                        conversions.convertGoogleDirectionsStatus(status));
-                }
+            const deletedRouteHashes = _.without(oldRouteHashes, ...newRouteHashes);
+            _.each(deletedRouteHashes, function (hash) {
+                self._unregisterRoute(hash);
             });
+
+            const netNewRouteHashes = _.without(newRouteHashes, ...oldRouteHashes);
+            _.each(netNewRouteHashes, function (hash) {
+                self._registerRoute(hash, isNewRoute);
+            });
+
+            // update the start marker only if the old first route was removed/replaced
+            if (_.contains(deletedRouteHashes, _.first(oldRouteHashes))) {
+                this._updateEndpoint(_.first, this.start);
+            }
+            // update the finish marker only if the old last route was removed/replaced
+            if (_.contains(deletedRouteHashes, _.last(oldRouteHashes))) {
+                this._updateEndpoint(_.last, this.finish);
+            }
         }
-        // TODO support for multiple renderers
+    },
+
+    /**
+     * @desc Replace the route with the given hash in the routes list with the supplied new route.
+     *    The routesDirections are updated accordingly.
+     *    This is just a hack, to avoid the route re-render when the route attributes
+     *    are pushed back as props to this component.
+     * @param {string} oldRouteHash - the hash of the route to replace
+     * @param {object} newRoute - the replacement
+     */
+    _replaceRoute: function (oldRouteHash, newRoute) {
+        const newRoutes = _.map(this.routes, function (r) {
+            return r.hash === oldRouteHash ? newRoute : r;
+        });
+        this.routes = newRoutes;
+
+        // since I cannot update the listener, I am going to remove the existing one
+        // and attach a new one with the correct callback
+        const routeDirections = this.routesDirections[oldRouteHash];
+        routeDirections.listener.remove();
+        routeDirections.listener = routeDirections.renderer.addListener(
+            "directions_changed",
+            _.partial(this._onRouteChange, newRoute.hash)
+        );
+
+        // re-add the routeDirections with the correct hash key
+        const newRoutesDirections = _.omit(this.routesDirections, oldRouteHash);
+        newRoutesDirections[newRoute.hash] = routeDirections;
+        this.routesDirections = newRoutesDirections;
+
+        // update the global start marker only if the first route changed
+        if (_.first(this.routes).hash === newRoute.hash) {
+            this._updateEndpoint(_.first, this.start);
+        }
+        // update the global finish marker only if the last route changed
+        if (_.last(this.routes).hash === newRoute.hash) {
+            this._updateEndpoint(_.last, this.finish);
+        }
     },
     
     /**
      * @desc Listener to route change events, triggered by direct user interactions
      *    with the map/route. It updates the route endpoints and/or waypoints as needed.
+     * @param {string} routeHash - the hash of the changing route
      */
-    _onRouteChange: function () {
-console.log("map: on route change");
-        if (_.isEmpty(this.directionsRenderer.getDirections().routes)) {
-            this.props.onRouteUpdate(null, null, [], 0);
-            return;
+    _onRouteChange: function (routeHash) {
+        console.log("map: on route change:", routeHash);
+        console.log("map: routesDirections:", this.routesDirections);
+
+        const newGoogleRoute = this.routesDirections[routeHash].renderer.getDirections().routes[0];
+        const newRoute = conversions.convertGoogleRoute(newGoogleRoute);
+
+        // save this; I am going to need it later
+        const oldRoutes = this.routes;
+
+        this._replaceRoute(routeHash, newRoute);
+
+        this.props.onRouteUpdate(routeHash, newRoute);
+
+        if (oldRoutes.length === 1 && oldRoutes[0].points.length === 2 &&
+                this.routes.length === 1 && this.routes[0].points.length === 3) {
+            notifications.firstWaypoint(this.props.onNotification);
         }
-
-        var route = this.directionsRenderer.getDirections().routes[0];
-
-        // put all waypoints on all legs into a single array
-        const routePoints = calculators.mergeRouteLegs(route);
-
-        // update the instance variables, to avoid the route re-render
-        // when the route attributes are pushed back as props to this component
-        const start = _.first(routePoints);
-        const finish = _.last(routePoints);
-        const waypoints = _.initial(_.rest(routePoints));
-        const distance = calculators.totalDistance(route);
-
-        notifications.routeUpdated(this.props.onNotification, this.waypoints, waypoints);
-
-        // update the instance variables, to avoid the route re-render
-        // when the route attributes are pushed back as props to this component
-        this.start = start;
-        this.finish = finish;
-        this.waypoints = waypoints;
-        this.props.onRouteUpdate(start, finish, waypoints, distance);
-
-        // TODO support for multiple renderers
-    },
-
-/*
-
-    SCENARIO: init
-        rendererList = []
-        routes = []
-
-    SCENARIO: first route
-        routes.push(route)
-        rendererList.push(new DirectionsRenderer(
-            start: route.start,
-            finish: route.finish,
-            waypoints: route.waypoints))
-
-
-    route: {
-        waypoints: []
-    }
-
-    _onMapDomClick:
-        reducer.deleteWaypoint(waypoint)
-
-    _route(routes: route[])
-        var rendererMap = {}
-        this.routes.foreach(function (route, index) {
-            rendererMap.put(route.hash, rendererList.get(index);
-        });
-
-        var rendererList = [];
-
-        for each (route : routes) {
-            let renderer = rendererMap.get(route.hash);
-            if (renderer = null) {
-                // awesome; the route hasn't changed
-                rendererList.add(renderer);
-            }
-            else {
-                // hmmm... it's a new route; build a new renderer
-                renderer = new Renderer(...)
-            }
-            rendererList.add(renderer);
-        }
-
-        // what's left in the rendererList are just renderers which are not actual any longer
-        rendererMap.values.forEach(renderer -> renderer.setMap(null));
-
-        this.rendererList = rendererList
-        this.routes = routes
-
-    _routeChanged:
-        this.routes = ...;
-        onRouteUpdate(routes);
-
-    delete route
-        rendererList.forEach( renderer -> renderer.setMap(null) )
-        rendererList = []
-
-    reducer.onRouteUpdate:
-        normalizeRoutePoints:
-            for each route:
-                if route.end != nextRoute.start
-                    update one of them; figure out which one changed by comparing with the previous state
-
-        calculate distance
-
-        const fullRoute = find the route with 25 points
-        if (fullRoute) {
-            rebuild the full route as 2 routes: 15 + 10 points
-                newRoute1
-                newRoute1.hash = hash(newRoute1.waypoints)
-                newRoute2
-                newRoute2.hash = hash(newRoute2.waypoints)
-            index = state.routes.indexOf(fullRoute)
-            state.routes.remove(fullRoute)
-            state.routes.insert(newRoute1)
-            state.routes.insert(newRoute2)
-        }
-        else {
-            // I don't know which route updated
-            state.routes = routes
-            rebuildRouteHashes()
-        }
-        state.distance = distance
-
-    reducer.deleteWaypoint:
-        for (route: routes) {
-            for (point: route.points) {
-                if (firstRoute && waypoint == firstPoint || lastRoute && waypoint == lastPoint) {
-                    // do nothing
-                }
-                else {
-                    matchedRoute = route
-                    matchedPoint = point
-                }
-            }
-        }
-        if (matchedRoute && matchedPoint) {
-            const updateNextRoute = matchedRoute != lastRoute && nextRoute.firstPoint == matchedPoint;
-
-            matchedRoute.remove(matchedPoint)
-
-            if (updateNextRoute) {
-                nextRoute.remove(firstPoint)
-            }
-
-            if (route.waypoints.length == 1 && nextRoute.waypoints.length == 1) {
-                // we have two incomplete routes; delete the first
-                // and move the start point on it to the next route as start point
-                state.routes.delete(matchedRoute);
-                nextRoute.insert(matchedRoute.firstPoint, 0);
-                nextRoute.hash = hash(nextRoute.waypoints)
-            }
-            else if (route.waypoints.length == 1) {
-                // just the current route is incomplete;
-                // since I already deleted the start of the next route,
-                // move the start of the current route as start on the next one
-                state.routes.delete(matchedRoute);
-                nextRoute.insert(matchedRoute.firstPoint, 0)
-            }
-            else if (nextRoute.waypoints.length == 1) {
-                // just the next route is incomplete;
-                // since I already deleted the finish of the current route,
-                // move the finish of the next route as finish on the current one
-                state.routes.delete(nextRoute);
-                matchedRoute.add(nextRoute.lastPoint, 0)
-            }
-            else {
-                // the current and next routes have enough waypoints to be valid;
-                // since I already deleted the start of the next route,
-                // I have room for adding one more point:
-                // duplicate the finish on the current route as start on the next one
-                if (updateNextRoute) {
-                    nextRoute.insert(matchedRoute.lastPoint, 0)
-                    nextRoute.hash = hash(nextRoute.waypoints)
-                }
-                matchedRoute.hash = hash(matchedRoute.waypoints)
-            }
-        }
-        
-
-
-                    SCENARIO: waypoints.length == 0 && add waypoint
-                        nothing
-
-                    SCENARIO: waypoints.length == 1 && removed waypoint
-                        nothing
-
-                    SCENARIO: waypoints.length % 22 == 0 && add waypoint
-                        split waypoint lists
-                        add new DirectionsRenderer
-
-                    SCENARIO: waypoints.length % 22 == (1..21) && add waypoint
-                        nothing
-
-                    SCENARIO: waypoints.length % 22 == 1 && remove waypoint
-                        compact waypoint lists
-                        remove last DirectionsRenderer
-
-                    SCENARIO: waypoints.length % 22 == (0, 2..21) && remove waypoint
-                        nothing
-
-*/
-
-    // TODO REMOVE???
-    _groupWaypoints: function (waypoints) {
-        return _.chain(waypoints).groupBy(function (waypoint, index) {
-            return Math.floor(index / 22);
-        }).toArray().value();
-    },
-
-    /**
-     * @desc Reset the map.
-     */
-    _resetMap: function () {
-        // "disable" the existing directions display
-        this.directionsRenderer.setMap(null);
-        // and set up a new one
-        this._initDirectionsRenderer();
-        // TODO support for multiple renderers
     },
 
     /**
@@ -350,69 +211,75 @@ console.log("map: on route change");
 
     _initMap: function () {
         const mapElement = document.getElementById("map");
-        this.map = new google.maps.Map(mapElement, {
-            center: { lat: 49.2956, lng: -123.1174 },
-            mapTypeControl: true,
-            mapTypeControlOptions: {
-                mapTypeIds: [
-                    google.maps.MapTypeId.ROADMAP,
-                    google.maps.MapTypeId.SATELLITE,
-                    google.maps.MapTypeId.TERRAIN
-                ],
-                style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
-                position: google.maps.ControlPosition.LEFT_TOP
-            },
-            zoomControl: true,
-            zoom: 10,
-            minZoom: 4,
-            maxZoom: 19,
-            scaleControl: true,
-            scaleControlOptions: {
-                style: google.maps.ScaleControlStyle.DEFAULT
-            },
-            streetViewControl: false
-        });
-
+        this.map = builders.newMap(mapElement);
         this.mapDomClickListener = google.maps.event.addDomListener(
             mapElement, "click", this._onMapDomClick
         );
-
         this.mapGoogleClickListener = this.map.addListener("click", this._onMapGoogleClick);
     },
 
     _initDirections: function () {
-        this._initDirectionsService();
-        this._initDirectionsRenderer();
-    },
-
-    _initDirectionsService: function () {
         this.directionsService = new google.maps.DirectionsService();
+
+        this.start = builders.newMarker(EndpointType.START, this.map);
+        this.finish = builders.newMarker(EndpointType.FINISH, this.map);
     },
 
-    _initDirectionsRenderer: function () {
-        // unregister the directions listener before adding a new one
-        if (this.directionsListener) {
-            this.directionsListener.remove();
-        }
+    _buildRouteDefinition: function (routeHash) {
+        const route = _.find(this.routes, function (r) {
+            return r.hash === routeHash;
+        });
 
-        var directionsOptions = {
-            map: this.map,
-            draggable: true,
-            suppressInfoWindows: true
-        };
-        this.directionsRenderer = new google.maps.DirectionsRenderer(directionsOptions);
+        return builders.newDirectionsRequest(route, this.travelMode);
+    },
 
-        this.directionsListener = this.directionsRenderer.addListener(
+    _registerRoute: function (routeHash, isNewRoute) {
+        console.log("registering route", routeHash, "; is new:", isNewRoute);
+        const self = this;
+
+        const renderer = new google.maps.DirectionsRenderer(
+            builders.newDirectionsRendererOptions(this.map, !isNewRoute)
+        );
+
+        this.directionsService.route(
+            self._buildRouteDefinition(routeHash),
+            function (result, status) {
+                const isOK = status === google.maps.DirectionsStatus.OK;
+                if (isOK) {
+                    renderer.setDirections(result);
+                }
+                else {
+                    console.log(`ERROR: the directions rendering failed with: ${status}`);
+                    notifications.routeError(self.props.onNotification, status);
+                }
+            }
+        );
+
+        const listener = renderer.addListener(
             "directions_changed",
-            this._onRouteChange
+            _.partial(this._onRouteChange, routeHash)
         );
-        
-        this.props.onNotification(
-            NotificationLevel.INFO,
-            "Route",
-            "To build a new route, click on the map to select the start and the finish points."
-        );
-        // TODO support for multiple renderers
+
+        this.routesDirections[routeHash] = {
+            renderer: renderer,
+            listener: listener
+        };
+    },
+
+    _unregisterRoute: function (routeHash) {
+        console.log("unregistering route", routeHash);
+
+        const routeDirections = this.routesDirections[routeHash];
+        routeDirections.listener.remove();
+        routeDirections.renderer.setMap(null);
+
+        // remove the renderer and the listener for the route to unregister
+        this.routesDirections = _.omit(this.routesDirections, routeHash);
+    },
+
+    _exportGpx: function () {
+        const content = formatters.routesToGpx(this.routes);
+        FileSaver.saveAs(content, "route.gpx");
     },
 
     componentDidMount: function () {
@@ -427,9 +294,9 @@ console.log("map: on route change");
         if (this.mapGoogleClickListener) {
             this.mapGoogleClickListener.remove();
         }
-        if (this.directionsListener) {
-            this.directionsListener.remove();
-        }
+        _.each(this.routesDirections, function (routeDirections) {
+            routeDirections.listener.remove();
+        });
     },
 
     /**
@@ -437,11 +304,17 @@ console.log("map: on route change");
      * @param {object} nextProps - the next set of properties
      */
     componentWillReceiveProps: function (nextProps) {
-        console.log("map props: travelMode:", this.travelMode,
-                   ", start:", this.start,
-                   ", finish:", this.finish,
-                   ", waypoints:", this.waypoints);
-        console.log("map nextProps:", nextProps);
+        console.log("map props:",
+                ", travelMode:", this.travelMode,
+                ", routes:", this.routes);
+        console.log("map nextProps:",
+                ", travelMode:", nextProps.travelMode,
+                ", routes:", nextProps.routes);
+
+        const self = this;
+
+        const isNewRoute = this.routeExists === false && nextProps.routeExists;
+        const isRouteRemoved = this.routes.length > 0 && nextProps.routes.length === 0;
 
         this.routeExists = nextProps.routeExists;
 
@@ -451,23 +324,29 @@ console.log("map: on route change");
             this.travelMode = nextProps.travelMode;
             updateRoute = true;
         }
-        if (_.isEqual(this.start, nextProps.start) === false) {
-            this.start = nextProps.start;
-            updateRoute = true;
-        }
-        if (_.isEqual(this.finish, nextProps.finish) === false) {
-            this.finish = nextProps.finish;
-            updateRoute = true;
-        }
-        if (_.isEqual(this.waypoints, nextProps.waypoints) === false) {
-            this.waypoints = nextProps.waypoints;
-            updateRoute = true;
-        }
 
+        // for each new route, check if there is not a matching old route;
+        // the length comparison avoids the negative result for empty new route list
+        const routesChanged = nextProps.routes.length !== this.routes.length ||
+            _.some(nextProps.routes, function (newRoute) {
+                return false === _.some(self.routes, function (route) {
+                    return route.hash === newRoute.hash;
+                });
+            });
+        if (routesChanged) {
+            this.routes = nextProps.routes;
+            updateRoute = true;
+        }
+        
         if (updateRoute) {
-            console.log("redrawing the route");
-            this._route();
-        }            
+            console.log("RE-RENDER THE ROUTES");
+
+            this._route(isNewRoute);
+
+            if (isRouteRemoved) {
+                notifications.mapReady(this.props.onNotification);
+            }
+        }
     },
 
     /**
@@ -481,6 +360,7 @@ console.log("map: on route change");
 
     componentDidUpdate: function () {
         this._init();
+        notifications.mapReady(this.props.onNotification);
     },
 
     render: function () {

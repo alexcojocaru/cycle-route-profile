@@ -1,35 +1,51 @@
 "use strict";
 
 var NotificationLevel = require("../constant/notificationConstant").Level;
+var conversions = require("./mapsApiConversions");
 
 /**
- * @callback onNotification
+ * @callback notificationCallback
  * @param {string} level - notification level
  * @param {string} title - notification title
  * @param {string} message - notification message
  */
 
 /**
- * @descr trigger any notifications on route update
- * @param {onNotification} onNotification - the onNotification callback
- * @param {array} waypoints - the list of simple waypoints (as {lat, lng}) on the current route
- * @param {array} nextWaypoints - the list of simple waypoints (as {lat, lng}) on the next route
+ * @desc Display an INFO message describing how to remove a waypoint.
+ * @param {notificationCallback} notificationCallback - the onNotification callback
  */
-var routeUpdated = function(onNotification, waypoints, nextWaypoints) {
-    // show the warning only if we don't have 8 points already
-    if (waypoints.length !== 23 && nextWaypoints.length === 23) {
-        onNotification(
-            NotificationLevel.WARNING,
-            "Route",
-            "The maximum allowed waypoints has been reached; remove one to add one."
-        );
-    }
-    else if (waypoints.length === 0 && nextWaypoints.length === 1) {
-        onNotification(
-            NotificationLevel.INFO,
-            "Route",
-            "To delete a marker, click on it."
-        );
-    }
-}
-module.exports.routeUpdated = routeUpdated;
+const firstWaypoint = function (notificationCallback) {
+    notificationCallback(
+        NotificationLevel.INFO,
+        "Route",
+        "To delete a waypoint, click on it."
+    );
+};
+module.exports.firstWaypoint = firstWaypoint;
+
+/**
+ * @desc Display an INFO message describing how to create a route.
+ * @param {notificationCallback} notificationCallback - the onNotification callback
+ */
+const mapReady = function (notificationCallback) {
+    notificationCallback(
+        NotificationLevel.INFO,
+        "Route",
+        "To build a new route, click on the map to select the start and the finish points."
+    );
+};
+module.exports.mapReady = mapReady;
+
+/**
+ * @desc trigger a notification on route render error
+ * @param {notificationCallback} notificationCallback - the onNotification callback
+ * @param {string} status - the status of the route request send to the directions service
+ */
+const routeError = function (notificationCallback, status) {
+    notificationCallback(
+        NotificationLevel.ERROR,
+        "Route",
+        conversions.convertGoogleDirectionsStatus(status)
+    );
+};
+module.exports.routeError = routeError;
