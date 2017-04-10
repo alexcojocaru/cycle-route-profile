@@ -2,6 +2,7 @@ var Path = require("path");
 
 var HtmlWebpackPlugin = require("html-webpack-plugin");
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
+
 var extractCSS = new ExtractTextPlugin("stylesheets/[name]-[contenthash:8].css");
 
 module.exports = {

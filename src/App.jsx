@@ -3,6 +3,10 @@
 // reference the static assets, to be processed/bundled by the webpack plugins
 require("./css/main.css");
 
+// TODO do I need this?
+// provides support for promises
+require("babel-polyfill");
+
 var React = require("react");
 var ReactDOM = require("react-dom");
 
@@ -54,6 +58,7 @@ var App = React.createClass({
                     distance: this.props.distance,
                     onWaypointDelete: this.routePlannerAction.deleteWaypoint,
                     onRouteUpdate: this.routePlannerAction.updateRoute,
+                    onExportGpx: this.routePlannerAction.exportGpx,
                     onRoutesDelete: this.routePlannerAction.deleteRoutes,
                     onTravelModeUpdate: this.routePlannerAction.updateTravelMode,
                     onNotification: this.notificationAction.addNotification,
@@ -111,7 +116,7 @@ var App = React.createClass({
 
     componentDidMount: function () {
         const params = queryString.parse(location.search);
-        const apiKey = params["apiKey"];
+        const apiKey = params.apiKey;
         if (apiKey) {
             this.apiKeyAction.updateApiKey(apiKey);
         }
@@ -161,6 +166,7 @@ App = ReactRedux.connect(function (state) {
         endpointSelectionDialogLocation: state.route.endpointSelectionDialogLocation,
         endpointSelectionDialogVisible: state.route.endpointSelectionDialogVisible,
         controlsOpened: state.route.controlsOpened,
+        controlsDisabled: state.route.controlsDisabled,
 
         notifications: state.notification.notifications
     };

@@ -1,5 +1,3 @@
-/* global google:true*/
-
 "use strict";
 
 const _ = require("underscore");
@@ -51,13 +49,15 @@ const routesToGpx = function (routes) {
     <name>Track ${index}</name>`
         );
 
-        const points = google.maps.geometry.encoding.decodePath(route.path);
-        _.each(points, function (point) {
+        _.each(route.points, point => {
             content.push(
-                // TODO elevations
 `
-    <trkpt lat="${point.lat()}" lon="${point.lng()}" />`
+    <trkpt lat="${point.lat}" lon="${point.lng}"`
             );
+            if (_.has(point, "ele") && point.ele !== null) {
+                content.push(` ele="${point.ele}"`);
+            }
+            content.push(" />");
         });
 
         content.push(

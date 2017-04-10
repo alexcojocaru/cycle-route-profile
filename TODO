@@ -1,5 +1,5 @@
-todo
+TODO
+
+do I stil need promises? If no, remove the polyfill from App.jsx and package.json
 
 remove all console.log statements
-remove the hardcoded API key from apiKeyReducer
-support for > 8 waypoints

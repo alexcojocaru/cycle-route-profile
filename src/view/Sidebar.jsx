@@ -26,11 +26,17 @@ var Sidebar = React.createClass({
         onToggleControls: React.PropTypes.func,
         onTravelModeUpdate: React.PropTypes.func,
         onRoutesDelete: React.PropTypes.func,
+        onExportGpx: React.PropTypes.func,
+        routes: React.PropTypes.array,
         controlsDisabled: React.PropTypes.bool
     },
 
     _onTravelModeUpdate: function (event, key, payload) {
         this.props.onTravelModeUpdate(payload);
+    },
+
+    _onExportGpx: function () {
+        this.props.onExportGpx(this.props.routes);
     },
 
     render: function () {
@@ -45,7 +51,7 @@ var Sidebar = React.createClass({
                 {
                     this.props.controlsOpened &&
                     <div className="verticalSidebar">
-                        <Flex column px={2} py={2}>
+                        <Flex column={true} px={2} py={2}>
                             <Box>
                                 <span className="label">Travel mode:</span>
                             </Box>

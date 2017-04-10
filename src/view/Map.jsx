@@ -3,13 +3,11 @@
 
 var React = require("react");
 var _ = require("underscore");
-var FileSaver = require("file-saver");
 
 var TravelModePropValidator = require("../util/routeValidators").TravelModePropValidator;
 var EndpointType = require("../constant/routePlannerConstant").EndpointType;
 var conversions = require("../util/mapsApiConversions");
 var calculators = require("../util/routeCalculators");
-var formatters = require("../util/routeFormatters");
 var notifications = require("../util/routeNotifications");
 var builders = require("../util/mapBuilders");
 
@@ -83,7 +81,7 @@ const Map = React.createClass({
         const waypoint = calculators.findWaypointWithinBounds(this.map, this.routes, mouseEvent);
 
         if (waypoint) {
-            this.props.onWaypointDelete(waypoint);
+            this.props.onWaypointDelete(this.routes, waypoint);
         }
     },
 
@@ -191,7 +189,7 @@ const Map = React.createClass({
 
         this._replaceRoute(routeHash, newRoute);
 
-        this.props.onRouteUpdate(routeHash, newRoute);
+        this.props.onRouteUpdate(routeHash, newRoute, this.routes);
 
         if (oldRoutes.length === 1 && oldRoutes[0].points.length === 2 &&
                 this.routes.length === 1 && this.routes[0].points.length === 3) {
@@ -276,11 +274,6 @@ const Map = React.createClass({
 
         // remove the renderer and the listener for the route to unregister
         this.routesDirections = _.omit(this.routesDirections, routeHash);
-    },
-
-    _exportGpx: function () {
-        const content = formatters.routesToGpx(this.routes);
-        FileSaver.saveAs(content, "route.gpx");
     },
 
     componentDidMount: function () {

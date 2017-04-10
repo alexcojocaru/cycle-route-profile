@@ -1,7 +1,6 @@
 "use strict";
 
 var React = require("react");
-var _ = require("underscore");
 
 var Map = require("./Map.jsx");
 var EndpointSelectionDialog = require("./EndpointSelectionDialog.jsx");
@@ -15,13 +14,7 @@ var RoutePlanner = React.createClass({
          * therefore I cannot mark the required one as such.
          */
         routeExists: React.PropTypes.bool,
-        onRoutesUpdate: React.PropTypes.func,
-    },
-
-    _onExportGpx: function () {
-        if (this.props.routeExists) {
-            this.map._exportGpx();
-        }
+        onRoutesUpdate: React.PropTypes.func
     },
 
     componentWillReceiveProps: function (nextProps) {
@@ -30,16 +23,12 @@ var RoutePlanner = React.createClass({
 
     render: function () {
 console.log("route planner render"); // eslint-disable-line indent
-        const self = this;
-        const sidebarProps = _.extend({
-            onExportGpx: self._onExportGpx
-        }, this.props);
 
         return (
             <div id="route-planner">
                 <Map ref={ map => { this.map = map; } } {...this.props} />
                 <EndpointSelectionDialog {...this.props} />
-                <Sidebar {...sidebarProps} />
+                <Sidebar {...this.props} />
             </div>
         );
     }

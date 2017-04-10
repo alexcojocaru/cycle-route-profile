@@ -3,7 +3,7 @@
 "use strict";
 
 var _ = require("underscore");
-var hashFunction = require("object-hash");
+var hashFunction = require("./hash").hashPoints;
 var TravelMode = require("../constant/routePlannerConstant").TravelMode;
 var calculators = require("./routeCalculators");
 

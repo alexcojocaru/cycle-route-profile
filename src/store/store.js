@@ -9,6 +9,7 @@ var containerReducer = require("../reducer/containerReducer");
 var apiKeyReducer = require("../reducer/apiKeyReducer");
 var routePlannerReducer = require("../reducer/routePlannerReducer");
 var elevationCalculatorReducer = require("../reducer/elevationCalculatorReducer");
+var elevationReducer = require("../reducer/elevationReducer");
 var notificationReducer = require("../reducer/notificationReducer");
 
 
@@ -17,6 +18,7 @@ var reducer = combineReducers({
     apiKey: apiKeyReducer,
     route: routePlannerReducer,
     elevationCalculator: elevationCalculatorReducer,
+    elevation: elevationReducer,
     notification: notificationReducer
 });
 var store = createStore(

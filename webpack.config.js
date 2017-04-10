@@ -2,11 +2,12 @@ var Path = require("path");
 
 var HtmlWebpackPlugin = require("html-webpack-plugin");
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
-var extractCSS = new ExtractTextPlugin("stylesheets/[name]-[contenthash:8].min.css");
 
 var Clean = require("clean-webpack-plugin");
 var UglifyJsPlugin = require("webpack").optimize.UglifyJsPlugin;
 var DedupePlugin = require("webpack").optimize.DedupePlugin;
+
+var extractCSS = new ExtractTextPlugin("stylesheets/[name]-[contenthash:8].min.css");
 
 var buildDir = "build";
 
