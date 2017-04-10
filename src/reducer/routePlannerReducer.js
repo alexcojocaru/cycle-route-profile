@@ -20,7 +20,7 @@
 
 const _ = require("underscore");
 
-const logger = require("../util/logger").routePlannerReducer;
+const logger = require("../util/logger").logger("RoutePlannerReducer");
 const ActionTypes = require("../action/routePlannerAction").Types;
 const TravelMode = require("../constant/routePlannerConstant").TravelMode;
 const EndpointType = require("../constant/routePlannerConstant").EndpointType;
@@ -93,11 +93,10 @@ const routePlannerReducer = function (state, action) {
             break;
         case ActionTypes.UPDATE_ROUTE:
             // TODO if the first point on a route gets moved, the routes are not reconnected
-            const newRoutes = nextState.routes = modifiers.normalizeRoutes(
-                _.map(nextState.routes, route => {
-                    return route.hash === action.oldRouteHash ? action.newRoute : route;
-                })
-            );
+            const newRoutes = _.map(nextState.routes, route => {
+                return route.hash === action.oldRouteHash ? action.newRoute : route;
+            });
+            nextState.routes = modifiers.normalizeRoutes(newRoutes, nextState.routes);
             nextState.distance = parsers.totalDistance(nextState.routes);
             break;
         case ActionTypes.DELETE_ROUTES:

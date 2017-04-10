@@ -3,7 +3,7 @@
 const _ = require("underscore");
 const uuidV4 = require("uuid/v4");
 
-const logger = require("../util/logger").notificationReducer;
+const logger = require("../util/logger").logger("NotificationReducer");
 const ActionType = require("../action/notificationAction").Type;
 
 

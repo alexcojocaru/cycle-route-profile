@@ -2,7 +2,7 @@
 
 var _ = require("underscore");
 
-const logger = require("../util/logger").containerReducer;
+const logger = require("../util/logger").logger("ContainerReducer");
 var ActionTypes = require("../action/containerAction").Types;
 var ViewType = require("../constant/containerConstant").ViewType;
 

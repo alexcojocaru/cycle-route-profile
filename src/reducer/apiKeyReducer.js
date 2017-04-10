@@ -1,7 +1,7 @@
 "use strict";
 
 const _ = require("underscore");
-const logger = require("../util/logger").apiKeyReducer;
+const logger = require("../util/logger").logger("ApiKeyReducer");
 const ActionTypes = require("../action/apiKeyAction.js").Types;
 
 const validateApiKey = function (key) {

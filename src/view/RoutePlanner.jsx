@@ -2,7 +2,7 @@
 
 var React = require("react");
 
-const logger = require("../util/logger").routePlanner;
+const logger = require("../util/logger").logger("RoutePlanner");
 var Map = require("./Map.jsx");
 var EndpointSelectionDialog = require("./EndpointSelectionDialog.jsx");
 var Sidebar = require("./Sidebar.jsx");

@@ -8,7 +8,7 @@ const FetchStatus = require("../constant/elevationConstant").FetchStatus;
 const notificationAction = require("./notificationAction");
 const NotificationLevel = require("../constant/notificationConstant").Level;
 const routePlannerAction = require("./routePlannerAction");
-const logger = require("../util/logger").elevationAction;
+const logger = require("../util/logger").logger("ElevationAction");
 
 
 const Types = keyMirror({

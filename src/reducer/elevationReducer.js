@@ -2,7 +2,7 @@
 
 var _ = require("underscore");
 
-const logger = require("../util/logger").elevationReducer;
+const logger = require("../util/logger").logger("ElevationReducer");
 var ActionTypes = require("../action/elevationAction").Types;
 var FetchStatus = require("../constant/elevationConstant").FetchStatus;
 

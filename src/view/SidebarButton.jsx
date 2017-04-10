@@ -3,6 +3,7 @@
 var React = require("react");
 var Tooltip = require("react-portal-tooltip");
 
+
 var SidebarButton = React.createClass({
     propTypes: {
         open: React.PropTypes.bool,

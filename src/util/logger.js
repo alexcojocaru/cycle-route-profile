@@ -10,9 +10,14 @@ const Level = keyMirror({
 });
 module.exports.Level = Level;
 
-const Logger = function (opts) {
-    const componentName = opts.name;
-    const level = opts.level || Level.INFO;
+const LoggerConfig = {
+    root: Level.DEBUG
+    // define levels for specific component names as needed
+};
+
+const Logger = function (name) {
+    const componentName = name || "N/A";
+    const level = LoggerConfig[componentName] || LoggerConfig.root || Level.INFO;
 
     const log = function () {
         // formatted timestamp translated to the browser's locale
@@ -54,21 +59,4 @@ const Logger = function (opts) {
     };
 };
 module.exports.logger = Logger;
-
-module.exports.main = Logger({ level: Level.DEBUG, name: "App" });
-module.exports.map = Logger({ level: Level.DEBUG, name: "Map" });
-module.exports.notificationPanel = Logger({ level: Level.DEBUG, name: "NotificationPanel" });
-module.exports.routePlanner = Logger({ level: Level.DEBUG, name: "RoutePlanner" });
-module.exports.elevationCalculator = Logger({ level: Level.DEBUG, name: "ElevationCalculator" });
-
-module.exports.elevationAction = Logger({ level: Level.DEBUG, name: "ElevationAction" });
-
-module.exports.containerReducer = Logger({ level: Level.DEBUG, name: "ContainerReducer" });
-module.exports.apiKeyReducer = Logger({ level: Level.DEBUG, name: "ApiKeyReducer" });
-module.exports.elevationReducer = Logger({ level: Level.DEBUG, name: "ElevationReducer" });
-module.exports.notificationReducer = Logger({ level: Level.DEBUG, name: "NotificationReducer" });
-module.exports.routePlannerReducer = Logger({ level: Level.DEBUG, name: "RoutePlannerReducer" });
-
-module.exports.mapsApiConversions = Logger({ level: Level.DEBUG, name: "MapsApiConversions" });
-module.exports.routeModifiers = Logger({ level: Level.DEBUG, name: "RouteModifiers" });
 

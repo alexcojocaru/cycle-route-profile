@@ -7,7 +7,7 @@ var _ = require("underscore");
 var ToGeoJson = require("togeojson");
 var Simplify = require("simplify-geojson");
 
-const logger = require("../util/logger").elevationCalculator;
+const logger = require("../util/logger").logger("ElevationCalculator");
 
 var ElevationCalculator = React.createClass({
 

@@ -1,7 +1,7 @@
 "use strict";
 
 const _ = require("underscore");
-const logger = require("../util/logger").routeModifiers;
+const logger = require("../util/logger").logger("RouteModifiers");
 const hashFunction = require("../util/hash").hashPoints;
 const builders = require("./routeBuilders");
 const parsers = require("./routeParsers");
@@ -129,7 +129,7 @@ const splitRoute = function (route) {
         splits.push(route);
     }
     else {
-        // for each sublist of 14 points, add them
+        // for each sublist of (SPLIT_POINT_COUNT - 1) points, add them
         // (plus the next one, for I need the finish/start to overlap) to a new route
         for (let i = 0; i < route.points.length; i += (SPLIT_POINT_COUNT - 1)) {
             const slice = route.points.slice(
@@ -242,9 +242,10 @@ const reconnectRoutes = function (routes, oldRoutes) {
 /**
  * @desc normalize the route list and return a new list.
  * @param {route[]} routes - the route list to normalize
+ * @param {route[]} - oldRoutes - the old route list to use as reference (mainly for reconnecting)
  * @return {route[]} - the new route list
  */
-const normalizeRoutes = function (routes) {
+const normalizeRoutes = function (routes, oldRoutes) {
     const newRoutes = builders.cloneRoutes(routes);
 
     const needSplit = _.some(newRoutes, function (r) {
@@ -254,7 +255,7 @@ const normalizeRoutes = function (routes) {
     // if a route has 25 points or more, it means a new waypoint was added to it;
     // split it and don't reconnect the endpoints, for the start/finish have not changed;
     // otherwise try to reconnect the start/finish points as needed
-    const result = needSplit ? splitRoutes(newRoutes) : reconnectRoutes(newRoutes, routes);
+    const result = needSplit ? splitRoutes(newRoutes) : reconnectRoutes(newRoutes, oldRoutes);
 
     return result;
 };

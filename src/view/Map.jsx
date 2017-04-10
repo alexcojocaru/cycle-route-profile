@@ -4,7 +4,7 @@
 const React = require("react");
 const _ = require("underscore");
 
-const logger = require("../util/logger").map;
+const logger = require("../util/logger").logger("Map");
 const TravelModePropValidator = require("../util/routeValidators").TravelModePropValidator;
 const EndpointType = require("../constant/routePlannerConstant").EndpointType;
 const conversions = require("../util/mapsApiConversions");
