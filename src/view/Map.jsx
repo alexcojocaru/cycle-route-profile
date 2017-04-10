@@ -4,7 +4,7 @@
 const React = require("react");
 const _ = require("underscore");
 
-const logger = require("../util/log").map;
+const logger = require("../util/logger").map;
 const TravelModePropValidator = require("../util/routeValidators").TravelModePropValidator;
 const EndpointType = require("../constant/routePlannerConstant").EndpointType;
 const conversions = require("../util/mapsApiConversions");
@@ -248,14 +248,17 @@ const Map = React.createClass({
             this.props.onRouteUpdate(routeHash, newRoute);
 
             // this is the last update on this route within this cycle
-            fetchElevation = true;
+            fetchElevations = true;
         }
         else {
             // this is the last update on this route within this cycle
-            fetchElevation = true;
+            fetchElevations = true;
         }
 
-        this.props.onFetchElevations(routeHash, newRoute.points);
+        if (fetchElevations) {
+            logger.debug("Route", routeHash, "has settled down; fetching elevation for route:", routeHash);
+            this.props.onFetchElevations(routeHash, newRoute.points);
+        }
     },
 
     /**
@@ -342,13 +345,6 @@ const Map = React.createClass({
             this.routes = nextProps.routes;
             updateRoute = true;
         }
-        /*
-        const routeElevationsChanged = !parsers.areRoutesIdentical(this.routes, nextProps.routes);
-        if (routeElevationsChanged) {
-            logger.debug("route elevations have changed");
-            this.routes = nextProps.routes;
-        }
-        */
         
         if (updateRoute) {
             this._route(isNewRoute, isTravelModeChanged);

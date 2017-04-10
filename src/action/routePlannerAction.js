@@ -121,16 +121,16 @@ module.exports.fetchElevations = function (routeHash, points) {
 };
 
 /**
- * @desc Update the points on the given route with elevation coordinates.
+ * @desc Update the elevations coordinates on the given route.
  * @param {string} routeHash - the hash code of the route to update
- * @param {point[]} points - the list of points with elevation coordinates
+ * @param {point[]} elevations - the list of points with elevation coordinates
  * @return {object} - the action
  */
-module.exports.updateElevations = function (routeHash, points) {
+module.exports.updateElevations = function (routeHash, elevations) {
     return {
         type: Types.UPDATE_ELEVATIONS,
         routeHash: routeHash,
-        points: points
+        elevations: elevations
     };
 };
 

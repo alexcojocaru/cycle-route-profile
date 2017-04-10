@@ -1,7 +1,7 @@
 "use strict";
 
 const _ = require("underscore");
-const logger = require("../util/log").routeModifiers;
+const logger = require("../util/logger").routeModifiers;
 const hashFunction = require("../util/hash").hashPoints;
 const builders = require("./routeBuilders");
 const parsers = require("./routeParsers");
@@ -259,24 +259,3 @@ const normalizeRoutes = function (routes) {
     return result;
 };
 module.exports.normalizeRoutes = normalizeRoutes;
-
-/**
- * @desc Update the elevation coordinate on the points on the given route
- *    with the elevation coordinate on the supplied points.
- *    A 1-to-1 mapping between the route points and the points with elevations is assumed.
- * @param {route} route - the route to update; the source is not modified
- * @param {point[]} pointsWithElevation - the points list, with the elevation attribute set
- * @return {route} - a new route (based on the given one) with points the elevation updated
- */
-// TODO probably remove it altogether
-const updateElevations = function (route, pointsWithElevation) {
-    const newRoute = builders.cloneRoute(route);
-    newRoute.points = _.map(newRoute.points, (point, index) => {
-        const newPoint = builders.clonePoint(point);
-        newPoint.ele = pointsWithElevation[index].ele;
-        return newPoint;
-    });
-
-    return newRoute;
-};
-module.exports.updateElevations = updateElevations;

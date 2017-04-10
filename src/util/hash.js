@@ -23,6 +23,10 @@ module.exports.hashPoints = function (points) {
  * @return {string} - the hash
  */
 module.exports.hashFullPoints = function (points) {
+    if (typeof points === "undefined") {
+        return "";
+    }
+
     return hashFunction(_.map(points, function (point) {
         return {
             lat: point.lat,

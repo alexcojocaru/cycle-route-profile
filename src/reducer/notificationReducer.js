@@ -3,7 +3,7 @@
 const _ = require("underscore");
 const uuidV4 = require("uuid/v4");
 
-const logger = require("../util/log").notificationReducer;
+const logger = require("../util/logger").notificationReducer;
 const ActionType = require("../action/notificationAction").Type;
 
 
@@ -12,6 +12,8 @@ const initialState = {
 };
 
 const notificationReducer = function (state, action) {
+    logger.debug("current notification state:", state, "; action:", action);
+
     const nextState = _.clone(state || initialState);
 
     switch (action.type) {
@@ -42,7 +44,7 @@ const notificationReducer = function (state, action) {
             break;
         default:
     }
-    logger.debug("notification state:", nextState);
+    logger.debug("new notification state:", nextState);
     return nextState;
 };
 

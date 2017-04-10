@@ -4,7 +4,7 @@ var React = require("react");
 var _ = require("underscore");
 var NotificationSystem = require("react-notification-system");
 
-const logger = require("../util/log").notificationPanel;
+const logger = require("../util/logger").notificationPanel;
 var Level = require("../constant/notificationConstant").Level;
 
 

@@ -16,7 +16,6 @@
     "file-saver": "1.3.3",
     "identity-obj-proxy": "3.0.0",
     "isomorphic-fetch": "2.2.1",
-    "logplease": "^1.2.13",
     "material-ui": "0.16.4",
     "object-hash": "1.1.5",
     "query-string": "4.3.0",

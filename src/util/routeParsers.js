@@ -2,8 +2,6 @@
 
 const _ = require("underscore");
 
-const hashFullPoints = require("./hash").hashFullPoints;
-
 /**
  * @desc Perform a deep comparison between the two given points
  *    to determine if they are equal; only the lat and lng attributes are compared.
@@ -110,32 +108,3 @@ const areRoutesSame = function (routes, others) {
             _.every(others, other => findRoute(routes, other.hash) !== undefined);
 };
 module.exports.areRoutesSame = areRoutesSame;
-
-/**
- * @desc Check if all routes in the routes list are identical to the routes in the others list.
- *    The verification included the elevation coordinates of points.
- * @param {route[]} routes - a route list
- * @param {route[]} others - another route list
- * @return {boolean} - true if the routes are identical between the two lists, false otherwise
- */
-// TODO remove???
-const areRoutesIdentical = function (routes, others) {
-    // the length comparison avoids the negative result for empty "others" list
-    return others.length === routes.length &&
-            _.every(others, other => {
-                const otherHash = hashFullPoints(other.points);
-                return _.some(routes, route => hashFullPoints(route.points) === otherHash);
-            });
-};
-module.exports.areRoutesIdentical = areRoutesIdentical;
-
-/**
- * @desc Check if the elevation coordinate on any of the route points is missing.
- * @param {route} route - the route to check
- * @return {boolean} - true if any of the route points is missing the elevation coordinate,
- *    false otherwise
- */
-const isElevationIncomplete = function (route) {
-    return _.some(route.points, point => point.ele === undefined);
-};
-module.exports.isElevationIncomplete = isElevationIncomplete;

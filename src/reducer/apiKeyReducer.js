@@ -1,7 +1,7 @@
 "use strict";
 
 const _ = require("underscore");
-const logger = require("../util/log").elevationAction;
+const logger = require("../util/logger").apiKeyReducer;
 const ActionTypes = require("../action/apiKeyAction.js").Types;
 
 const validateApiKey = function (key) {
@@ -18,6 +18,8 @@ const initialState = {
 initialState.isApiKeyValid = validateApiKey(initialState.currentApiKey);
 
 const apiKeyReducer = function (state, action) {
+    logger.debug("current api key state:", state, "; action:", action);
+
     const nextState = _.clone(state || initialState);
 
     switch (action.type) {
@@ -35,7 +37,7 @@ const apiKeyReducer = function (state, action) {
             break;
         default:
     }
-    logger.debug("api key state:", nextState);
+    logger.debug("new api key state:", nextState);
     return nextState;
 };
 

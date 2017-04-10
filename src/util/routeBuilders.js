@@ -25,6 +25,7 @@ module.exports.newRoute = newRoute;
  * @desc Clone the given route and return the clone.
  *    The points array is cloned, the hash is recalculated,
  *    but the points themselves are not cloned.
+ *    Same for the elevations array.
  * @param {route} route - the route to clone
  * @return {route} - the clone
  */
@@ -33,7 +34,8 @@ const cloneRoute = function (route) {
     return {
         points: points,
         hash: hashFunction(points),
-        distance: route.distance
+        distance: route.distance,
+        elevations: route.elevations
     };
 };
 module.exports.cloneRoute = cloneRoute;

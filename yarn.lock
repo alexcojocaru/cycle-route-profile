@@ -3167,10 +3167,6 @@ lodash@~4.16.4:
   version "4.16.6"
   resolved "https://registry.npmjs.org/lodash/-/lodash-4.16.6.tgz#d22c9ac660288f3843e16ba7d2b5d06cca27d777"
 
-logplease@^1.2.13:
-  version "1.2.13"
-  resolved "https://registry.npmjs.org/logplease/-/logplease-1.2.13.tgz#21a6dac4bdf029084d6718239c69dd937b931b2f"
-
 longest@^1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/longest/-/longest-1.0.1.tgz#30a0b2da38f73770e8294a0d22e6625ed77d0097"

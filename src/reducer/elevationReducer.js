@@ -2,7 +2,7 @@
 
 var _ = require("underscore");
 
-const logger = require("../util/log").elevationReducer;
+const logger = require("../util/logger").elevationReducer;
 var ActionTypes = require("../action/elevationAction").Types;
 var FetchStatus = require("../constant/elevationConstant").FetchStatus;
 
@@ -14,6 +14,8 @@ var initialState = {
 };
 
 var elevationReducer = function (state, action) {
+    logger.debug("current elevation state:", state, "; action:", action);
+
     var nextState = _.clone(state || initialState);
 
     switch (action.type) {
@@ -27,7 +29,7 @@ var elevationReducer = function (state, action) {
             break;
         default:
     }
-    logger.debug("elevation state:", nextState);
+    logger.debug("new elevation state:", nextState);
     return nextState;
 };
 

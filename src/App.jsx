@@ -23,7 +23,7 @@ var Tab = require("material-ui/Tabs").Tab;
 
 var queryString = require("query-string");
 
-var logger = require("./util/log").main;
+var logger = require("./util/logger").main;
 
 var NotificationPanel = require("./view/NotificationPanel.jsx");
 

@@ -12,13 +12,15 @@
  * @property {point[]} points - array of route points
  * @property {string} hash - the route hash
  * @property {number} distance - the distance
+ * @property {point[]} elevations - array of points with elevation coordinates;
+ *    these are not necessary the same points as on the 'points' property
  * @property {string} path - the encoded route path;
  *    see https://developers.google.com/maps/documentation/utilities/polylinealgorithm
  */
 
 const _ = require("underscore");
 
-const logger = require("../util/log").routePlannerReducer;
+const logger = require("../util/logger").routePlannerReducer;
 const ActionTypes = require("../action/routePlannerAction").Types;
 const TravelMode = require("../constant/routePlannerConstant").TravelMode;
 const EndpointType = require("../constant/routePlannerConstant").EndpointType;
@@ -56,8 +58,7 @@ const initialState = {
 };
 
 const routePlannerReducer = function (state, action) {
-    logger.debug("current reducer state:", state);
-    logger.debug("action:", action);
+    logger.debug("current planner state:", state, "; action:", action);
 
     const nextState = _.clone(state || initialState);
 
@@ -126,18 +127,19 @@ const routePlannerReducer = function (state, action) {
             nextState.controlsDisabled = true;
             break;
         case ActionTypes.UPDATE_ELEVATIONS:
-// TODO set the `elevations` property on the route being updated
             nextState.routes = _.map(nextState.routes, route => {
-                return route.hash === action.routeHash
-                        ? modifiers.updateElevations(route, action.points)
-                        : builders.cloneRoute(route);
+                const newRoute = builders.cloneRoute(route);
+                if (route.hash === action.routeHash) {
+                    newRoute.elevations = action.elevations;
+                }
+                return newRoute;
             });
             nextState.updatingRouteCount = nextState.updatingRouteCount - 1;
             nextState.controlsDisabled = nextState.updatingRouteCount > 0;
             break;
         default:
     }
-    logger.debug("next reducer state:", nextState);
+    logger.debug("new planner state:", nextState);
     return nextState;
 };
 

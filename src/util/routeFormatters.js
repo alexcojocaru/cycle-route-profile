@@ -54,9 +54,10 @@ const routesToGpx = function (routes) {
 `
     <trkpt lat="${point.lat}" lon="${point.lng}"`
             );
-            if (_.has(point, "ele") && point.ele !== null) {
-                content.push(` ele="${point.ele}"`);
-            }
+            // the elevations are not stored on the points in "points" attribute of the route
+            // if (_.has(point, "ele") && point.ele !== null) {
+            //     content.push(` ele="${point.ele}"`);
+            // }
             content.push(" />");
         });
 

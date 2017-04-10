@@ -3,7 +3,7 @@
 "use strict";
 
 var _ = require("underscore");
-const logger = require("../util/log").mapsApiConversions;
+const logger = require("../util/logger").mapsApiConversions;
 var hashFunction = require("./hash").hashPoints;
 var TravelMode = require("../constant/routePlannerConstant").TravelMode;
 var calculators = require("./routeCalculators");
