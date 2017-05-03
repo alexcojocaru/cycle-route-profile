@@ -15,15 +15,21 @@ const ElevationChart = React.createClass({
         distance: React.PropTypes.number
     },
 
-    // TODO highlight the point with a less accurate precision
-    // TODO unhighlight the current point if point === null
-    _onMouseMoveOnMap: function (point) {
-        const closestPoint = parsers.findClosestPoint(this.props.elevations, point);
+    activeRoutePoint: null, // the point to highlight as the mouse cursor is over a route
 
-        // the hack below is described in
-        // https://stackoverflow.com/questions/34679293/how-to-programmatically-make-a-line-chart-point-active-highlighted
-        const chart = this.chart.chart_instance;
-        chart.getDatasetMeta(0).controller.highlightPoint(closestPoint.index);
+    _onHighlightActiveRoutePoint: function (point) {
+        if (this.chart && this.activeRoutePoint !== point) {
+            logger.trace("Highlighting point:", point);
+
+            this.activeRoutePoint = point;
+
+            const closestPoint = parsers.findClosestPoint(this.props.elevations, point);
+
+            // the hack below is described in
+            // https://stackoverflow.com/questions/34679293/how-to-programmatically-make-a-line-chart-point-active-highlighted
+            const chart = this.chart.chart_instance;
+            chart.getDatasetMeta(0).controller.highlightPoint(closestPoint.index);
+        }
     },
 
     _getLatLngLabels: function (tooltipItems) {
@@ -103,8 +109,7 @@ const ElevationChart = React.createClass({
     // TODO
     // handle event:
     //   - on mouse move along line, move the waypoint on the route
-    //   - on mouse move along the route, move the point on the chart line
-    //      - how to overlap the polyline and the route??
+    // show the horizontal and vertical line (sight like) on chart
     // fix the grade calculation - it's too extreme
     //      calculate the true distance between two geodesic points
 

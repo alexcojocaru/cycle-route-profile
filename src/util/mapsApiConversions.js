@@ -2,32 +2,76 @@
 
 "use strict";
 
-var _ = require("underscore");
+const _ = require("underscore");
 const logger = require("../util/logger").logger("MapsApiConversions");
-var hashFunction = require("./hash").hashPoints;
-var TravelMode = require("../constant/routePlannerConstant").TravelMode;
-var calculators = require("./routeCalculators");
+const hashFunction = require("./hash").hashPoints;
+const TravelMode = require("../constant/routePlannerConstant").TravelMode;
+const calculators = require("./routeCalculators");
 
 /**
  * @desc convert a Google LatLng coordinate to an on-screen coordinate in pixels
- *   (relative to the top left corner of the window).
- *   The Google Maps API must be loaded for this function to work.
+ *    (relative to the top left corner of the window).
+ *    The Google Maps API must be loaded for this function to work.
  * @param {google.maps.Map} map - the Google Map object
  * @param {google.maps.LatLng} coordinate - the Google LatLng coordinate
  * @return {google.maps.Point} - the screen coordinate
  */
-var convertGoogleCoordinateToScreen = function (map, coordinate) {
-    var topRight = map.getProjection().fromLatLngToPoint(map.getBounds().getNorthEast());
-    var bottomLeft = map.getProjection().fromLatLngToPoint(map.getBounds().getSouthWest());
-    var scale = Math.pow(2, map.getZoom());
-    var worldPoint = map.getProjection().fromLatLngToPoint(coordinate);
-    var point = new google.maps.Point(
+const convertGoogleCoordinateToScreen = function (map, coordinate) {
+    const topRight = map.getProjection().fromLatLngToPoint(map.getBounds().getNorthEast());
+    const bottomLeft = map.getProjection().fromLatLngToPoint(map.getBounds().getSouthWest());
+    const scale = Math.pow(2, map.getZoom());
+    const worldPoint = map.getProjection().fromLatLngToPoint(coordinate);
+    const point = new google.maps.Point(
             (worldPoint.x - bottomLeft.x) * scale,
             (worldPoint.y - topRight.y) * scale
     );
     return point;
 };
 module.exports.convertGoogleCoordinateToScreen = convertGoogleCoordinateToScreen;
+
+/**
+ * @desc convert an on-screen coordinate in pixels
+ *    (relative to the top left corner of the document)
+ *    to a Google LatLng coordinate.
+ *    The Google Maps API must be loaded for this function to work.
+ * @param {google.maps.Map} map - the Google Map object
+ * @param {google.maps.Point} point - the screen coordinate
+ * @return {google.maps.LatLng} - the Google LatLng coordinate
+ */
+const convertScreenCoordinateToGoogle = function (map, point) { 
+    const topRight = map.getProjection().fromLatLngToPoint(map.getBounds().getNorthEast());
+    const bottomLeft = map.getProjection().fromLatLngToPoint(map.getBounds().getSouthWest());
+    const scale = Math.pow(2, map.getZoom());
+    const worldPoint = new google.maps.Point(
+        point.x / scale + bottomLeft.x,
+        point.y / scale + topRight.y);
+    return map.getProjection().fromPointToLatLng(worldPoint);
+};
+module.exports.convertScreenCoordinateToGoogle = convertScreenCoordinateToGoogle;
+
+/**
+ * @desc Given the current map zoom factor,
+ *    what's the equivalent in degrees of a pixel on the scren.
+ *    The Google Maps API must be loaded for this function to work.
+ * @param {google.maps.Map} map - the Google Map object
+ */
+module.exports.convertPixelToDegrees = function (map) {
+    const projection = map.getProjection();
+    const topRight = projection.fromLatLngToPoint(map.getBounds().getNorthEast());
+    const bottomLeft = projection.fromLatLngToPoint(map.getBounds().getSouthWest());
+    const scale = Math.pow(2, map.getZoom());
+
+    const worldPoint1 = new google.maps.Point(
+        100 / scale + bottomLeft.x,
+        100 / scale + topRight.y);
+    const worldPoint2 = new google.maps.Point(
+        101 / scale + bottomLeft.x,
+        100 / scale + topRight.y);
+
+    return Math.abs(
+            projection.fromPointToLatLng(worldPoint1).lng() -
+            projection.fromPointToLatLng(worldPoint2).lng());
+};
 
 /**
  * @desc convert the given simple coordinate to an on-screen coordinate
@@ -37,7 +81,7 @@ module.exports.convertGoogleCoordinateToScreen = convertGoogleCoordinateToScreen
  * @param {object} coordinate - the simple coordinate in {lat, lng} format
  * @return {google.maps.Point} - the on-screen coordinate in pixels
  */
-var convertSimpleCoordinateToScreen = function (map, coordinate) {
+const convertSimpleCoordinateToScreen = function (map, coordinate) {
     return convertGoogleCoordinateToScreen(map, new google.maps.LatLng(coordinate));
 };
 module.exports.convertSimpleCoordinateToScreen = convertSimpleCoordinateToScreen;
@@ -48,7 +92,7 @@ module.exports.convertSimpleCoordinateToScreen = convertSimpleCoordinateToScreen
  * @param {google.maps.LatLng} coordinate - the Google LatLng coordinate
  * @return {object} - the simple coordinate in {lat, lng} format
  */
-var convertGoogleCoordinateToSimple = function (coordinate) {
+const convertGoogleCoordinateToSimple = function (coordinate) {
     return {
         lat: coordinate.lat(),
         lng: coordinate.lng()
@@ -62,7 +106,7 @@ module.exports.convertGoogleCoordinateToSimple = convertGoogleCoordinateToSimple
  * @param {object} coordinate - the simple coordinate in {lat, lng} format
  * @return {google.maps.LatLng} - the Google LatLng coordinate
  */
-var convertSimpleCoordinateToGoogle = function (coordinate) {
+const convertSimpleCoordinateToGoogle = function (coordinate) {
     return new google.maps.LatLng(coordinate);
 };
 module.exports.convertSimpleCoordinateToGoogle = convertSimpleCoordinateToGoogle;
@@ -75,7 +119,7 @@ module.exports.convertSimpleCoordinateToGoogle = convertSimpleCoordinateToGoogle
  * @param {google.maps.Point} relativeLocation - the on-screen location relative to the map
  * @return {google.maps.Point} - the on-screen location relative to the viewport
  */
-var convertRelativeLocationToAbsolute = function (mapElement, relativeLocation) {
+const convertRelativeLocationToAbsolute = function (mapElement, relativeLocation) {
     // const mapRect = mapElement.getBoundingClientRect();
     return {
         // hmm... looks like I don't need to take the map position into account
@@ -93,7 +137,7 @@ module.exports.convertRelativeLocationToAbsolute = convertRelativeLocationToAbso
  * @param {google.maps.LatLng} coordinate - the Google LatLng coordinate
  * @return {google.maps.Point} - the on-screen coordinate relative to the viewport
  */
-var convertGoogleCoordinateToAbsolute = function (map, coordinate) {
+const convertGoogleCoordinateToAbsolute = function (map, coordinate) {
     return convertRelativeLocationToAbsolute(
             map.getDiv(),
             convertGoogleCoordinateToScreen(map, coordinate));
@@ -106,7 +150,7 @@ module.exports.convertGoogleCoordinateToAbsolute = convertGoogleCoordinateToAbso
  * @param {google.maps.DirectionsStatus} status - the Google DirectionStatus
  * @return {string} - the direction status message
  */
-var convertGoogleDirectionsStatus = function (status) {
+const convertGoogleDirectionsStatus = function (status) {
     switch (status) {
         case google.maps.DirectionsStatus.INVALID_REQUEST:
             return "The webpage generated an invalid request," +
@@ -144,7 +188,7 @@ module.exports.convertGoogleDirectionsStatus = convertGoogleDirectionsStatus;
  *     enum of google.maps.TravelMode type
  * @return {google.maps.TravelMode} - the travel mode enum
  */
-var convertSimpleTravelMode = function (travelMode) {
+const convertSimpleTravelMode = function (travelMode) {
     switch (travelMode) {
         case TravelMode.ROAD:
             return google.maps.TravelMode.DRIVING;
@@ -164,7 +208,7 @@ module.exports.convertSimpleTravelMode = convertSimpleTravelMode;
  * @param {google.maps.TravelMode} travelMode - the Google TravelMode value
  * @return {TravelMode} - the simple travel mode
  */
-var convertGoogleTravelMode = function (travelMode) {
+const convertGoogleTravelMode = function (travelMode) {
     switch (travelMode) {
         case google.maps.TravelMode.DRIVING:
             return TravelMode.ROAD;
@@ -184,7 +228,7 @@ module.exports.convertGoogleTravelMode = convertGoogleTravelMode;
  * @param {boolean} [stopover=false] - whether the points are stop over or not
  * @return {array} - an array of google.maps.DirectionsWaypoint objects
  */
-var convertSimpleWaypointList = function (waypoints, stopover = false) {
+const convertSimpleWaypointList = function (waypoints, stopover = false) {
     return _.map(
         waypoints,
         function (waypoint) {
@@ -202,7 +246,7 @@ module.exports.convertSimpleWaypointList = convertSimpleWaypointList;
  * @param {array} waypoints - the list of google.maps.LatLng waypoints
  * @return {array} - a list of simple waypoint objects as {lat, lng}
  */
-var convertGoogleWaypointList = function (waypoints) {
+const convertGoogleWaypointList = function (waypoints) {
     return _.map(waypoints, function (waypoint) {
         return {
             lat: waypoint.lat(),
@@ -217,7 +261,7 @@ module.exports.convertGoogleWaypointList = convertGoogleWaypointList;
  * @param {object} googleRoute - the Google route
  * @return {object} - the simple route
  */
-var convertGoogleRoute = function (googleRoute) {
+const convertGoogleRoute = function (googleRoute) {
     const distance = calculators.totalDistance(googleRoute);
     const points = calculators.mergeRouteLegs(googleRoute);
     const path = googleRoute.overview_polyline;

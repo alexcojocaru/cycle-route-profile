@@ -137,9 +137,9 @@ module.exports.newPath = function (map) {
         // clickable: false,
         visible: false,
         strokeOpacity: 0,
-        strokeWeight: 23, // 23 is the width of the gogle route
+        strokeWeight: 1, // 23 is the width of the gogle route
         strokeColor: "red",
-        zIndex: 1000
+        zIndex: -1
     });
 };
 

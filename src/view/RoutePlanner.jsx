@@ -20,8 +20,8 @@ var RoutePlanner = React.createClass({
         onRoutesUpdate: React.PropTypes.func
     },
 
-    _onMouseMoveOnMap: function (point) {
-        this.chart._onMouseMoveOnMap(point);
+    _onHighlightActiveRoutePoint: function (point) {
+        this.chart._onHighlightActiveRoutePoint(point);
     },
 
     componentWillReceiveProps: function (nextProps) {
@@ -42,7 +42,7 @@ var RoutePlanner = React.createClass({
                         ]}>
                     <Map ref={ map => { this.map = map; } }
                             {...this.props}
-                            onMouseMoveOnMap={this._onMouseMoveOnMap} />
+                            onHighlightActiveRoutePoint={this._onHighlightActiveRoutePoint} />
                     <ElevationChart ref={ chart => { this.chart = chart; } }
                             {...this.props} />
                 </PanelGroup>

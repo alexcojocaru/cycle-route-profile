@@ -86,18 +86,3 @@ const totalDistance = function (route) {
 };
 module.exports.totalDistance = totalDistance;
 
-/**
- * @desc Return an array with all the point on the given Google route.
- * @param {google.maps.DirectionsRoute} route - a google route
- * @return {google.maps.LatLng[]} - the points list
- */
-// TODO remove
-/*
-module.exports.getPoints = function (route) {
-    const routePoints = [];
-    _.each(route.legs[0].steps, step => {
-        _.each(step.lat_lngs, lat_lng => routePoints.push(lat_lng));
-    });
-    return routePoints;
-};
-*/

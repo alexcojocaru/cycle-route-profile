@@ -34,7 +34,7 @@ const Map = React.createClass({
         onWaypointDelete: React.PropTypes.func,
         onRouteUpdate: React.PropTypes.func,
         onFetchElevations: React.PropTypes.func,
-        onMouseMoveOnMap: React.PropTypes.func,
+        onHighlightActiveRoutePoint: React.PropTypes.func,
         onNotification: React.PropTypes.func,
         onOpenEndpointSelectionDialog: React.PropTypes.func
     },
@@ -55,6 +55,9 @@ const Map = React.createClass({
     routeExists: false,
     routes: [],
     controlsDisabled: false,
+    pathTolerance: 0, // the tolerance to use for checking if the mouse cursor is over a route
+    mapZoomListener: null,
+    mapTilesLoadedListener: null,
 
     /**
      * @desc When the user clicks on the map, if the start and the finish point are not set,
@@ -90,6 +93,39 @@ const Map = React.createClass({
     },
 
     /**
+     * @desc Update the path tolerance according to the current zoom factor.
+     */
+    _updatePathTolerance: function () {
+        // the route is 2x23 pixels wide; allow a similar path tolerance
+        // hmmm, looks like 7 is the magic number (found empirically)
+        this.pathTolerance = 7 * conversions.convertPixelToDegrees(this.map);
+        logger.debug(`current path tolerance: ${this.pathTolerance} deg`);
+    },
+
+    /**
+     * @desc Check if the cursor is over a route and, if so,
+     * highlight the corresponding point on the elevation chart.
+     * @param {MouseEvent} e - the mouse move event
+     */
+    _updateActivePoint: function (e) {
+        const coord = conversions.convertScreenCoordinateToGoogle(
+            this.map,
+            new google.maps.Point(e.clientX, e.clientY)
+        );
+
+        const onRoute = _.find(this.routesDirections, routeDirections => {
+            return google.maps.geometry.poly.isLocationOnEdge(
+                coord,
+                routeDirections.path,
+                this.pathTolerance);
+        });
+
+        this.props.onHighlightActiveRoutePoint(
+            onRoute ? { lat: coord.lat(), lng: coord.lng() } : null
+        );
+    },
+
+    /**
      * @desc Update the given endpoint marker to coincide
      *    with the point on the route found by the finder function.
      * @param {function} finder - the finder function to be applied on the route list
@@ -103,29 +139,6 @@ const Map = React.createClass({
             endpoint.setPosition(conversions.convertSimpleCoordinateToGoogle(point));
         }
         endpoint.setVisible(Boolean(point));
-    },
-
-    _onMouseEventOnRoute: function (routeHash, event) {
-        const self = this;
-        const mouseEventAttribute = _.find(_.keys(event), function (key) {
-            return (event[key] && event[key].target);
-        });
-        const mouseEvent = event[mouseEventAttribute];
-
-        google.maps.event.trigger(self.map, "pathvisible", routeHash, false);
-
-        // the mouse event on route will trigger now
-
-        setTimeout(function () {
-            google.maps.event.trigger(self.map, "pathvisible", routeHash, true);
-        }, 100);
-        
-        // tell the elevation chart to highlight the current point
-        this.props.onMouseMoveOnMap(
-            mouseEvent.type === "mouseout"
-                ? null
-                : { lat: event.latLng.lat(), lng: event.latLng.lng() }
-        );
     },
 
     _registerRoute: function (routeHash, isNewRoute) {
@@ -142,35 +155,11 @@ const Map = React.createClass({
         );
 
         const path = builders.newPath(this.map);
-        const pathListener = path.addListener(
-                "mousemove",
-                e => this._onMouseEventOnRoute(routeHash, e)
-        );
-const uniq = new Date().getTime();
-logger.trace(">>>>>>>>>>> registering route and adding over/out listeners", uniq);
-        // TODO trigger this to unhighlight the current point on the chart
-        const pathOverListener = path.addListener(
-                "mouseover",
-                e => {
-                    //e => this._onMouseEventOnRoute(path, e)
-                    if (google.maps.geometry.poly.isLocationOnEdge(e.latLng, path) === false) {
-                        console.log(">>>>>>>>> mouse over", uniq);
-                    }
-                }
-        );
-        // TODO trigger this to unhighlight the current point on the chart
-        const pathOutListener = path.addListener(
-                "mouseout",
-                e => console.log(">>>>>>>>> mouse out", uniq) //this._onMouseEventOnRoute(path, e)
-        );
 
         this.routesDirections[routeHash] = {
             renderer: renderer,
             listener: listener,
-            path: path,
-            pathListener: pathListener,
-            pathOutListener: pathOutListener,
-            pathOverListener: pathOverListener
+            path: path
         };
 
         this.directionsService.route(
@@ -194,15 +183,6 @@ logger.trace(">>>>>>>>>>> registering route and adding over/out listeners", uniq
 
         const routeDirections = this.routesDirections[routeHash];
 
-        if (routeDirections.pathListener) {
-            routeDirections.pathListener.remove();
-        }
-        if (routeDirections.pathOutListener) {
-            routeDirections.pathOutListener.remove();
-        }
-        if (routeDirections.pathOverListener) {
-            routeDirections.pathOverListener.remove();
-        }
         routeDirections.path.setMap(null);
 
         routeDirections.listener.remove();
@@ -333,7 +313,7 @@ logger.trace(">>>>>>>>>>> registering route and adding over/out listeners", uniq
             this._initMap();
             this._initDirections();
 
-            document.getElementById("map").addEventListener("mousemove", this._mouseMove);
+            document.getElementById("map").addEventListener("mousemove", this._updateActivePoint);
         }
     },
 
@@ -346,37 +326,9 @@ logger.trace(">>>>>>>>>>> registering route and adding over/out listeners", uniq
             mapElement, "click", this._onMapDomClick
         );
         this.mapGoogleClickListener = this.map.addListener("click", this._onMapGoogleClick);
-
-        this.pathVisibleListener = this.map.addListener(
-            "pathvisible",
-            (routeHash, visible) => {
-                const route = self.routesDirections[routeHash];
-
-                if (visible === false) {
-logger.trace(">>>>>>>>>>> hide path");
-                    route.pathOverListener.remove();
-                    route.pathOverListener = undefined;
-                    route.pathOutListener.remove();
-                    route.pathOutListener = undefined;
-                }
-                route.path.setVisible(visible);
-                if (visible) {
-const uniq = new Date().getTime();
-logger.trace(">>>>>>>>>>> show path and adding over/out listeners", uniq);
-                    route.pathOverListener = route.path.addListener(
-                            "mouseover",
-                            e => {
-                                if (google.maps.geometry.poly.isLocationOnEdge(e.latLng, route.path) === false) {
-                                    console.log(">>>>>>>>> mouse over", uniq);
-                                }
-                            }
-                    );
-                    route.pathOutListener = route.path.addListener(
-                            "mouseout",
-                            e => console.log(">>>>>>>>> mouse out", uniq)
-                    );
-                }
-            }
+        this.mapZoomListener = this.map.addListener("zoom_changed", this._updatePathTolerance);
+        this.mapTilesLoadedListener = this.map.addListener(
+            "tilesloaded", this._updatePathTolerance
         );
     },
 
@@ -404,28 +356,17 @@ logger.trace(">>>>>>>>>>> show path and adding over/out listeners", uniq);
         if (this.mapGoogleClickListener) {
             this.mapGoogleClickListener.remove();
         }
-        if (this.pathVisibleListener) {
-            this.pathVisibleListener.remove();
+        if (this.mapZoomListener) {
+            this.mapZoomListener.remove();
+        }
+        if (this.mapTilesLoadedListener) {
+            this.mapTilesLoadedListener.remove();
         }
         _.each(this.routesDirections, function (routeDirections) {
             routeDirections.listener.remove();
-            if (routeDirections.pathListener) {
-                routeDirections.pathListener.remove();
-            }
-            if (routeDirections.pathOutListener) {
-                routeDirections.pathOutListener.remove();
-            }
-            if (routeDirections.pathOverListener) {
-                routeDirections.pathOverListener.remove();
-            }
-
             routeDirections.path.setMap(null);
         });
-        document.getElementById("map").removeEventListener("mousemove", this._mouseMove);
-    },
-
-    _mouseMove: function (e) {
-        logger.trace("mouse move:", e);
+        document.getElementById("map").removeEventListener("mousemove", this._updateActivePoint);
     },
 
     /**
