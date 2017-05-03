@@ -149,7 +149,7 @@ const ElevationChart = React.createClass({
                 borderJoinStyle: 'miter',
                 borderWidth: 1,
                 pointBackgroundColor: '#777',
-                pointHoverRadius: 3,
+                pointHoverRadius: 5,
                 pointHoverBackgroundColor: 'rgba(220,220,220,1)',
                 pointHoverBorderColor: '#777',
                 pointHoverBorderWidth: 1,
@@ -169,7 +169,15 @@ const ElevationChart = React.createClass({
             title: {
                 display: false
             },
+            hover: {
+                // these 2 config props should match the corresponding ones on tooltips
+                intersect: false,
+                mode: "index"
+            },
             tooltips: {
+                // these 2 config props should match the corresponding ones on hover
+                intersect: false,
+                mode: "index",
                 displayColors: false,
                 custom: function (tooltip) {
                     // it looks like the width can be undefined (if the tooltip is not showing)

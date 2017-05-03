@@ -1,9 +1,9 @@
 "use strict";
 
-var _ = require("underscore");
-var conversions = require("./mapsApiConversions");
+const _ = require("underscore");
+const conversions = require("./mapsApiConversions");
 
-var isWaypointWithinBounds = function (map, mapRect, waypoint, mouseEvent) {
+const isWaypointWithinBounds = function (map, mapRect, waypoint, mouseEvent) {
     const waypointPosition = conversions.convertSimpleCoordinateToScreen(map, waypoint);
 
     // calculate the distance from the location of the event to the current waypoint;
@@ -25,7 +25,7 @@ var isWaypointWithinBounds = function (map, mapRect, waypoint, mouseEvent) {
  * @param {MouseEvent} mouseEvent - the Google mouse event
  * @return {object} - the first waypoint within range or null
  */
-var findWaypointWithinBounds = function (map, routes, mouseEvent) {
+const findWaypointWithinBounds = function (map, routes, mouseEvent) {
     // all waypoints (except for the global start and finish points) into a flat array
     const waypoints = _.initial(_.rest(
         _.flatten(_.pluck(routes, "points"))
@@ -33,9 +33,10 @@ var findWaypointWithinBounds = function (map, routes, mouseEvent) {
 
     const mapRect = map.getDiv().getBoundingClientRect();
 
-    const result = _.find(waypoints, function (waypoint) {
-        return isWaypointWithinBounds(map, mapRect, waypoint, mouseEvent);
-    });
+    const result = _.find(
+        waypoints,
+        waypoint => isWaypointWithinBounds(map, mapRect, waypoint, mouseEvent)
+    );
 
     return result;
 };
@@ -47,17 +48,15 @@ module.exports.findWaypointWithinBounds = findWaypointWithinBounds;
  * @param {google.maps.DirectionsRoute} route - a google route
  * @return {array} - a list of simple waypoint objects as {lat, lng}
  */
-var mergeRouteLegs = function (route) {
+const mergeRouteLegs = function (route) {
     const waypoints = [];
-    _.each(route.legs, function (leg) {
+    _.each(route.legs, leg => {
         // don't add the start if it's equal to the previous finish
         if (!leg.start_location.equals(_.last(waypoints))) {
             waypoints.push(leg.start_location);
         }
 
-        _.each(leg.via_waypoints, function (waypoint) {
-            waypoints.push(waypoint);
-        });
+        _.each(leg.via_waypoints, waypoint => waypoints.push(waypoint));
 
         waypoints.push(leg.end_location);
     });
@@ -74,10 +73,10 @@ module.exports.mergeRouteLegs = mergeRouteLegs;
  * @param {google.maps.DirectionsRoute} route - a google route
  * @return {number} - the total distance in meters
  */
-var totalDistance = function (route) {
+const totalDistance = function (route) {
     const overallDistance = _.reduce(
         route.legs,
-        function (distance, leg) {
+        (distance, leg) => {
             const currentDistance = leg.distance ? leg.distance.value : 0;
             return distance + currentDistance;
         },
@@ -86,3 +85,19 @@ var totalDistance = function (route) {
     return overallDistance;
 };
 module.exports.totalDistance = totalDistance;
+
+/**
+ * @desc Return an array with all the point on the given Google route.
+ * @param {google.maps.DirectionsRoute} route - a google route
+ * @return {google.maps.LatLng[]} - the points list
+ */
+// TODO remove
+/*
+module.exports.getPoints = function (route) {
+    const routePoints = [];
+    _.each(route.legs[0].steps, step => {
+        _.each(step.lat_lngs, lat_lng => routePoints.push(lat_lng));
+    });
+    return routePoints;
+};
+*/

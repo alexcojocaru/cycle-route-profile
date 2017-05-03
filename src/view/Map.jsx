@@ -13,6 +13,9 @@ const parsers = require("../util/routeParsers");
 const notifications = require("../util/routeNotifications");
 const builders = require("../util/mapBuilders");
 
+// TODO still needed?
+require("setimmediate");
+
 
 /**
  * @desc This class is a huge hack. Some of it is React, but most of it is managed
@@ -105,6 +108,56 @@ const Map = React.createClass({
         endpoint.setVisible(Boolean(point));
     },
 
+    // TODO clean up
+    _onMouseEventOnRoute: function (path, event) {
+        const self = this;
+
+        if (self.ignoreMouseEventOnRoute) {
+            return;
+        }
+
+        const mouseEventAttribute = _.find(_.keys(event), function (key) {
+            return (event[key] && event[key].target);
+        });
+        const mouseEvent = event[mouseEventAttribute];
+logger.trace("onMouseEventOnRoute; type:", mouseEvent.type, "; event:", event);
+        mouseEvent.stopPropagation();
+
+        // setImmediate(function () {
+        logger.trace("Sending event to make path invisible");
+                google.maps.event.trigger(self.map, "pathvisible", path, false);
+                // path.setVisible(false);
+
+            // setImmediate(function () {
+                // const routeElement = document.elementFromPoint(mouseEvent.clientX, mouseEvent.clientY);
+                // const routeEvent = new MouseEvent(mouseEvent.type, mouseEvent);
+                // routeElement.dispatchEvent(routeEvent);
+
+                // setTimeout(function () {
+        logger.trace("Sending event to make path visible");
+                google.maps.event.trigger(self.map, "pathvisible", path, true);
+                // }, 100);
+        // });
+        
+
+        // dispatch a new event to set the path visible
+        // (so that it's handled after the route event)
+        
+        /*
+        setImmediate(function () {
+            console.trace("before making visible: path is visible:", path.getVisible());
+            path.setVisible(true);
+            console.trace("after making visible: path is visible:", path.getVisible());
+        });
+        */
+        
+        this.props.onMouseMoveOnMap(
+            mouseEvent.type === "mouseout"
+                ? null
+                : { lat: event.latLng.lat(), lng: event.latLng.lng() }
+        );
+    },
+
     _registerRoute: function (routeHash, isNewRoute) {
         logger.debug("registering route", routeHash, "; is new:", isNewRoute);
         const self = this;
@@ -118,33 +171,24 @@ const Map = React.createClass({
             _.partial(this._onRouteChange, routeHash)
         );
 
-        const polyline = builders.newPolyline(this.map);
-        const polylineMoveListener = polyline.addListener("mousemove",  e => {
-            self.props.onMouseMoveOnMap({
-                lat: e.latLng.lat(),
-                lng: e.latLng.lng()
-            });
-        });
-        const polylineOverListener = polyline.addListener("mouseover",  e => {
-            logger.trace("mouse over polyline #", routeHash, "; lat,lng:",
-                    e.latLng.lat(), ",", e.latLng.lng());
-            self.props.onMouseMoveOnMap({
-                lat: e.latLng.lat(),
-                lng: e.latLng.lng()
-            });
-        });
-        const polylineOutListener = polyline.addListener("mouseout",  e => {
-            logger.trace("mouse out polyline #", routeHash);
-            self.props.onMouseMoveOnMap(null);
-        });
+        const path = builders.newPath(this.map);
+        const pathMoveListener = path.addListener(
+                "mousemove",
+                e => this._onMouseEventOnRoute(path, e));
+        const pathOverListener = path.addListener(
+                "mouseover",
+                e => this._onMouseEventOnRoute(path, e));
+        const pathOutListener = path.addListener(
+                "mouseout",
+                e => this._onMouseEventOnRoute(path, e));
 
         this.routesDirections[routeHash] = {
             renderer: renderer,
             listener: listener,
-            polyline: polyline,
-            polylineMoveListener: polylineMoveListener,
-            polylineOverListener: polylineOverListener,
-            polylineOutListener: polylineOutListener
+            path: path,
+            pathMoveListener: pathMoveListener,
+            pathOverListener: pathOverListener,
+            pathOutListener: pathOutListener
         };
 
         this.directionsService.route(
@@ -153,7 +197,7 @@ const Map = React.createClass({
                 const isOK = status === google.maps.DirectionsStatus.OK;
                 if (isOK) {
                     renderer.setDirections(result);
-                    builders.updatePolyline(polyline, result.routes[0]);
+                    builders.updatePath(path, result.routes[0]);
                 }
                 else {
                     logger.error(`the directions rendering failed with: ${status}`);
@@ -168,10 +212,10 @@ const Map = React.createClass({
 
         const routeDirections = this.routesDirections[routeHash];
 
-        routeDirections.polylineMoveListener.remove();
-        routeDirections.polylineOverListener.remove();
-        routeDirections.polylineOutListener.remove();
-        routeDirections.polyline.setMap(null);
+        routeDirections.pathMoveListener.remove();
+        routeDirections.pathOverListener.remove();
+        routeDirections.pathOutListener.remove();
+        routeDirections.path.setMap(null);
 
         routeDirections.listener.remove();
         routeDirections.renderer.setMap(null);
@@ -310,6 +354,14 @@ const Map = React.createClass({
             mapElement, "click", this._onMapDomClick
         );
         this.mapGoogleClickListener = this.map.addListener("click", this._onMapGoogleClick);
+
+        this.pathVisibleListener = this.map.addListener("pathvisible", this._onSetPathVisible);
+    },
+
+    _onSetPathVisible: function (path, visible) {
+        logger.trace("Making path visible:", visible);
+        this.ignoreMouseEventOnRoute = !visible;
+        path.setVisible(visible);
     },
 
     _initDirections: function () {
@@ -338,9 +390,9 @@ const Map = React.createClass({
         }
         _.each(this.routesDirections, function (routeDirections) {
             routeDirections.listener.remove();
-            routeDirections.polylineListener.remove();
+            routeDirections.pathListener.remove();
 
-            routeDirections.polyline.setMap(null);
+            routeDirections.path.setMap(null);
         });
     },
 
