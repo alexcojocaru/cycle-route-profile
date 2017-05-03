@@ -1,5 +1,5 @@
 /* eslint-disable */
-// this code is copy-paste from elsewhere
+// this code is copy-pasted from elsewhere
 
 "use strict";
 
@@ -90,6 +90,47 @@ Chart.elements.Line = Chart.Element.extend({
 // the line element used by the chart is the one that we extended above)
 Chart.controllers.line = Chart.controllers.line.extend({
   datasetElementType: Chart.elements.Line,
+
+  // the following is to support activating a point programmatically
+  // http://stackoverflow.com/a/34687291
+  fireHighlightEvent: function(x, y, canvas, eventType){
+      var boundingRect = canvas.getBoundingClientRect();
+      var mouseX = Math.round(
+              (boundingRect.left + x) /
+              (boundingRect.right - boundingRect.left) *
+              canvas.width /
+              this.chart.chart.currentDevicePixelRatio
+      );
+      var mouseY = Math.round(
+              (boundingRect.top + y) /
+              (boundingRect.bottom - boundingRect.top) *
+              canvas.height /
+              this.chart.chart.currentDevicePixelRatio
+      );
+      var oEvent = document.createEvent('MouseEvents');
+      oEvent.initMouseEvent(eventType, true, true, document.defaultView,
+              0, mouseX, mouseY, mouseX, mouseY,
+              false, false, false, false, 0, canvas);
+      canvas.dispatchEvent(oEvent);
+    },
+    highlightPoint: function(index) {
+        var canvas = this.chart.chart.canvas;
+        var points = this.chart.getDatasetMeta(0).data;
+        // the 'click' event will highlight the new point
+        if (index > -1) {
+            var view = points[index]._view;
+            this.highlightPointIndex = index;
+            this.fireHighlightEvent(view.x, view.y, canvas, 'click');
+        }
+        // the 'mouseout' event will un-highlight the current point
+        else if (this.highlightPointIndex > -1) {
+            var view = points[this.highlightPointIndex]._view;
+            this.highlightPointIndex = -1;
+            this.fireHighlightEvent(view.x, view.y + 5, canvas, 'mouseout');
+        }
+    },
+    // the index of the previously highlighted point
+    highlightPointIndex: -1
 });
 
 

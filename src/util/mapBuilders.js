@@ -124,3 +124,36 @@ const newDirectionsRendererOptions = function (map, preserveViewport, draggable)
     };
 };
 module.exports.newDirectionsRendererOptions = newDirectionsRendererOptions;
+
+/**
+ * Build a new polyline on the given map, invisible and with an empty point list.
+ * @param {google.maps.Map} map - the map to render on
+ * @return {google.maps.Polyline} - the new polyline
+ */
+module.exports.newPolyline = function (map) {
+    return new google.maps.Polyline({
+        path: [],
+        map: map,
+        // clickable: false,
+        visible: false,
+        strokeOpacity: 0,
+        strokeWeight: 3, // 23 to fully cover the route
+        strokeColor: "red",
+        zIndex: 1000
+    });
+};
+
+/**
+ * Update the given polyline with the points on the given route, and make it visible.
+ * The given route is considered to have a single leg.
+ * @param {google.maps.Polyline} polyline - the polyline to update
+ * @param {google.maps.DirectionsRoute} routes - the route with points to set on the polyline
+ */
+module.exports.updatePolyline = function (polyline, route) {
+    const routePoints = [];
+    _.each(route.legs[0].steps, step => {
+        _.each(step.lat_lngs, lat_lng => routePoints.push(lat_lng));
+    });
+    polyline.setPath(routePoints);
+    polyline.setVisible(true);
+};

@@ -1,6 +1,7 @@
 "use strict";
 
 var React = require("react");
+var PanelGroup = require("react-panelgroup");
 
 const logger = require("../util/logger").logger("RoutePlanner");
 var Map = require("./Map.jsx");
@@ -19,6 +20,10 @@ var RoutePlanner = React.createClass({
         onRoutesUpdate: React.PropTypes.func
     },
 
+    _onMouseMoveOnMap: function (point) {
+        this.chart._onMouseMoveOnMap(point);
+    },
+
     componentWillReceiveProps: function (nextProps) {
         logger.debug("route planner nextProps.routeExists:", nextProps.routeExists);
     },
@@ -28,8 +33,19 @@ var RoutePlanner = React.createClass({
 
         return (
             <div id="route-planner">
-                <Map ref={ map => { this.map = map; } } {...this.props} />
-                <ElevationChart {...this.props} />
+                <PanelGroup direction="column"
+                        spacing={2}
+                        borderColor="grey"
+                        panelWidths={[
+                            {minSize:150, resize: "stretch"},
+                            {size: 200, minSize:200, resize: "dynamic"}
+                        ]}>
+                    <Map ref={ map => { this.map = map; } }
+                            {...this.props}
+                            onMouseMoveOnMap={this._onMouseMoveOnMap} />
+                    <ElevationChart ref={ chart => { this.chart = chart; } }
+                            {...this.props} />
+                </PanelGroup>
                 <EndpointSelectionDialog {...this.props} />
                 <Sidebar {...this.props} />
             </div>

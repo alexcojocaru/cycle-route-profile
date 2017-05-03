@@ -34,6 +34,7 @@ const Map = React.createClass({
         onWaypointDelete: React.PropTypes.func,
         onRouteUpdate: React.PropTypes.func,
         onFetchElevations: React.PropTypes.func,
+        onMouseMoveOnMap: React.PropTypes.func,
         onNotification: React.PropTypes.func,
         onOpenEndpointSelectionDialog: React.PropTypes.func
     },
@@ -112,12 +113,47 @@ const Map = React.createClass({
             builders.newDirectionsRendererOptions(this.map, !isNewRoute, !this.controlsDisabled)
         );
 
+        const listener = renderer.addListener(
+            "directions_changed",
+            _.partial(this._onRouteChange, routeHash)
+        );
+
+        const polyline = builders.newPolyline(this.map);
+        const polylineMoveListener = polyline.addListener("mousemove",  e => {
+            self.props.onMouseMoveOnMap({
+                lat: e.latLng.lat(),
+                lng: e.latLng.lng()
+            });
+        });
+        const polylineOverListener = polyline.addListener("mouseover",  e => {
+            logger.trace("mouse over polyline #", routeHash, "; lat,lng:",
+                    e.latLng.lat(), ",", e.latLng.lng());
+            self.props.onMouseMoveOnMap({
+                lat: e.latLng.lat(),
+                lng: e.latLng.lng()
+            });
+        });
+        const polylineOutListener = polyline.addListener("mouseout",  e => {
+            logger.trace("mouse out polyline #", routeHash);
+            self.props.onMouseMoveOnMap(null);
+        });
+
+        this.routesDirections[routeHash] = {
+            renderer: renderer,
+            listener: listener,
+            polyline: polyline,
+            polylineMoveListener: polylineMoveListener,
+            polylineOverListener: polylineOverListener,
+            polylineOutListener: polylineOutListener
+        };
+
         this.directionsService.route(
             self._buildRouteDefinition(routeHash),
             function (result, status) {
                 const isOK = status === google.maps.DirectionsStatus.OK;
                 if (isOK) {
                     renderer.setDirections(result);
+                    builders.updatePolyline(polyline, result.routes[0]);
                 }
                 else {
                     logger.error(`the directions rendering failed with: ${status}`);
@@ -125,22 +161,18 @@ const Map = React.createClass({
                 }
             }
         );
-
-        const listener = renderer.addListener(
-            "directions_changed",
-            _.partial(this._onRouteChange, routeHash)
-        );
-
-        this.routesDirections[routeHash] = {
-            renderer: renderer,
-            listener: listener
-        };
     },
 
     _unregisterRoute: function (routeHash) {
         logger.debug("unregistering route", routeHash);
 
         const routeDirections = this.routesDirections[routeHash];
+
+        routeDirections.polylineMoveListener.remove();
+        routeDirections.polylineOverListener.remove();
+        routeDirections.polylineOutListener.remove();
+        routeDirections.polyline.setMap(null);
+
         routeDirections.listener.remove();
         routeDirections.renderer.setMap(null);
 
@@ -306,6 +338,9 @@ const Map = React.createClass({
         }
         _.each(this.routesDirections, function (routeDirections) {
             routeDirections.listener.remove();
+            routeDirections.polylineListener.remove();
+
+            routeDirections.polyline.setMap(null);
         });
     },
 
