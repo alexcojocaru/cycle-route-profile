@@ -15,6 +15,8 @@ const ElevationChart = React.createClass({
         distance: React.PropTypes.number
     },
 
+    // TODO highlight the point with a less accurate precision
+    // TODO unhighlight the current point if point === null
     _onMouseMoveOnMap: function (point) {
         const closestPoint = parsers.findClosestPoint(this.props.elevations, point);
 

@@ -13,9 +13,6 @@ const parsers = require("../util/routeParsers");
 const notifications = require("../util/routeNotifications");
 const builders = require("../util/mapBuilders");
 
-// TODO still needed?
-require("setimmediate");
-
 
 /**
  * @desc This class is a huge hack. Some of it is React, but most of it is managed
@@ -108,49 +105,22 @@ const Map = React.createClass({
         endpoint.setVisible(Boolean(point));
     },
 
-    // TODO clean up
-    _onMouseEventOnRoute: function (path, event) {
+    _onMouseEventOnRoute: function (routeHash, event) {
         const self = this;
-
-        if (self.ignoreMouseEventOnRoute) {
-            return;
-        }
-
         const mouseEventAttribute = _.find(_.keys(event), function (key) {
             return (event[key] && event[key].target);
         });
         const mouseEvent = event[mouseEventAttribute];
-logger.trace("onMouseEventOnRoute; type:", mouseEvent.type, "; event:", event);
-        mouseEvent.stopPropagation();
 
-        // setImmediate(function () {
-        logger.trace("Sending event to make path invisible");
-                google.maps.event.trigger(self.map, "pathvisible", path, false);
-                // path.setVisible(false);
+        google.maps.event.trigger(self.map, "pathvisible", routeHash, false);
 
-            // setImmediate(function () {
-                // const routeElement = document.elementFromPoint(mouseEvent.clientX, mouseEvent.clientY);
-                // const routeEvent = new MouseEvent(mouseEvent.type, mouseEvent);
-                // routeElement.dispatchEvent(routeEvent);
+        // the mouse event on route will trigger now
 
-                // setTimeout(function () {
-        logger.trace("Sending event to make path visible");
-                google.maps.event.trigger(self.map, "pathvisible", path, true);
-                // }, 100);
-        // });
+        setTimeout(function () {
+            google.maps.event.trigger(self.map, "pathvisible", routeHash, true);
+        }, 100);
         
-
-        // dispatch a new event to set the path visible
-        // (so that it's handled after the route event)
-        
-        /*
-        setImmediate(function () {
-            console.trace("before making visible: path is visible:", path.getVisible());
-            path.setVisible(true);
-            console.trace("after making visible: path is visible:", path.getVisible());
-        });
-        */
-        
+        // tell the elevation chart to highlight the current point
         this.props.onMouseMoveOnMap(
             mouseEvent.type === "mouseout"
                 ? null
@@ -172,23 +142,35 @@ logger.trace("onMouseEventOnRoute; type:", mouseEvent.type, "; event:", event);
         );
 
         const path = builders.newPath(this.map);
-        const pathMoveListener = path.addListener(
+        const pathListener = path.addListener(
                 "mousemove",
-                e => this._onMouseEventOnRoute(path, e));
+                e => this._onMouseEventOnRoute(routeHash, e)
+        );
+const uniq = new Date().getTime();
+logger.trace(">>>>>>>>>>> registering route and adding over/out listeners", uniq);
+        // TODO trigger this to unhighlight the current point on the chart
         const pathOverListener = path.addListener(
                 "mouseover",
-                e => this._onMouseEventOnRoute(path, e));
+                e => {
+                    //e => this._onMouseEventOnRoute(path, e)
+                    if (google.maps.geometry.poly.isLocationOnEdge(e.latLng, path) === false) {
+                        console.log(">>>>>>>>> mouse over", uniq);
+                    }
+                }
+        );
+        // TODO trigger this to unhighlight the current point on the chart
         const pathOutListener = path.addListener(
                 "mouseout",
-                e => this._onMouseEventOnRoute(path, e));
+                e => console.log(">>>>>>>>> mouse out", uniq) //this._onMouseEventOnRoute(path, e)
+        );
 
         this.routesDirections[routeHash] = {
             renderer: renderer,
             listener: listener,
             path: path,
-            pathMoveListener: pathMoveListener,
-            pathOverListener: pathOverListener,
-            pathOutListener: pathOutListener
+            pathListener: pathListener,
+            pathOutListener: pathOutListener,
+            pathOverListener: pathOverListener
         };
 
         this.directionsService.route(
@@ -212,9 +194,15 @@ logger.trace("onMouseEventOnRoute; type:", mouseEvent.type, "; event:", event);
 
         const routeDirections = this.routesDirections[routeHash];
 
-        routeDirections.pathMoveListener.remove();
-        routeDirections.pathOverListener.remove();
-        routeDirections.pathOutListener.remove();
+        if (routeDirections.pathListener) {
+            routeDirections.pathListener.remove();
+        }
+        if (routeDirections.pathOutListener) {
+            routeDirections.pathOutListener.remove();
+        }
+        if (routeDirections.pathOverListener) {
+            routeDirections.pathOverListener.remove();
+        }
         routeDirections.path.setMap(null);
 
         routeDirections.listener.remove();
@@ -344,10 +332,14 @@ logger.trace("onMouseEventOnRoute; type:", mouseEvent.type, "; event:", event);
         if (this.props.isMapsApiLoaded === true && typeof (google) !== "undefined") {
             this._initMap();
             this._initDirections();
+
+            document.getElementById("map").addEventListener("mousemove", this._mouseMove);
         }
     },
 
     _initMap: function () {
+        const self = this;
+
         const mapElement = document.getElementById("map");
         this.map = builders.newMap(mapElement);
         this.mapDomClickListener = google.maps.event.addDomListener(
@@ -355,13 +347,37 @@ logger.trace("onMouseEventOnRoute; type:", mouseEvent.type, "; event:", event);
         );
         this.mapGoogleClickListener = this.map.addListener("click", this._onMapGoogleClick);
 
-        this.pathVisibleListener = this.map.addListener("pathvisible", this._onSetPathVisible);
-    },
+        this.pathVisibleListener = this.map.addListener(
+            "pathvisible",
+            (routeHash, visible) => {
+                const route = self.routesDirections[routeHash];
 
-    _onSetPathVisible: function (path, visible) {
-        logger.trace("Making path visible:", visible);
-        this.ignoreMouseEventOnRoute = !visible;
-        path.setVisible(visible);
+                if (visible === false) {
+logger.trace(">>>>>>>>>>> hide path");
+                    route.pathOverListener.remove();
+                    route.pathOverListener = undefined;
+                    route.pathOutListener.remove();
+                    route.pathOutListener = undefined;
+                }
+                route.path.setVisible(visible);
+                if (visible) {
+const uniq = new Date().getTime();
+logger.trace(">>>>>>>>>>> show path and adding over/out listeners", uniq);
+                    route.pathOverListener = route.path.addListener(
+                            "mouseover",
+                            e => {
+                                if (google.maps.geometry.poly.isLocationOnEdge(e.latLng, route.path) === false) {
+                                    console.log(">>>>>>>>> mouse over", uniq);
+                                }
+                            }
+                    );
+                    route.pathOutListener = route.path.addListener(
+                            "mouseout",
+                            e => console.log(">>>>>>>>> mouse out", uniq)
+                    );
+                }
+            }
+        );
     },
 
     _initDirections: function () {
@@ -388,12 +404,28 @@ logger.trace("onMouseEventOnRoute; type:", mouseEvent.type, "; event:", event);
         if (this.mapGoogleClickListener) {
             this.mapGoogleClickListener.remove();
         }
+        if (this.pathVisibleListener) {
+            this.pathVisibleListener.remove();
+        }
         _.each(this.routesDirections, function (routeDirections) {
             routeDirections.listener.remove();
-            routeDirections.pathListener.remove();
+            if (routeDirections.pathListener) {
+                routeDirections.pathListener.remove();
+            }
+            if (routeDirections.pathOutListener) {
+                routeDirections.pathOutListener.remove();
+            }
+            if (routeDirections.pathOverListener) {
+                routeDirections.pathOverListener.remove();
+            }
 
             routeDirections.path.setMap(null);
         });
+        document.getElementById("map").removeEventListener("mousemove", this._mouseMove);
+    },
+
+    _mouseMove: function (e) {
+        logger.trace("mouse move:", e);
     },
 
     /**

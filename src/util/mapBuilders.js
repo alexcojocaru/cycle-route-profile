@@ -130,7 +130,6 @@ module.exports.newDirectionsRendererOptions = newDirectionsRendererOptions;
  * @param {google.maps.Map} map - the map to render on
  * @return {google.maps.Polyline} - the new path
  */
-// TODO clean up
 module.exports.newPath = function (map) {
     return new google.maps.Polyline({
         path: [],
@@ -150,7 +149,6 @@ module.exports.newPath = function (map) {
  * @param {google.maps.Polyline} path - the path to update
  * @param {google.maps.DirectionsRoute} routes - the route with points to set on the path
  */
-// TODO clean up
 module.exports.updatePath = function (path, route) {
     const routePoints = [];
     _.each(route.legs[0].steps, step => {
