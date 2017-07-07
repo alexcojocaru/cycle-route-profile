@@ -2,6 +2,7 @@
 
 const keyMirror = require("fbjs/lib/keyMirror");
 const FileSaver = require("file-saver");
+const uuidV4 = require("uuid/v4");
 
 const elevationAction = require("./elevationAction");
 
@@ -106,45 +107,40 @@ module.exports.toggleControls = function () {
 };
 
 /**
- * @desc Fetch the elevation coordinates for the given points.
- * @param {point[]} points - the points
- * @param {string} pointsHash - the hash of the given points
- * @return {object} - the action
- */
-module.exports.fetchElevations = function (points, pointsHash) {
-    return function (dispatch) {
-        dispatch({
-            type: Types.UPDATING_ELEVATIONS,
-            pointsHash: pointsHash
-        });
-
-        dispatch(elevationAction.fetchAlongPath(points, pointsHash));
-    };
-};
-
-/**
  * @desc Update the elevations coordinates across all routes.
- * @param {string} pointsHash - the hash of the points list used to fetch the elevations coordinates
- *    (NB: those points are not the same - in terms of lat&lng - as in the elevations array)
+ * @param {string} token - the token which was passed to the elevations request
  * @param {pathPoint[]} elevations - the elevations corresponding to the given points
  * @return {object} - the action
  */
-module.exports.updateElevations = function (pointsHash, elevations) {
+const updateElevations = function (token, elevations) {
     return {
         type: Types.UPDATE_ELEVATIONS,
-        pointsHash: pointsHash,
+        token: token,
         elevations: elevations
     };
 };
+module.exports.updateElevations = updateElevations;
 
-module.exports.exportGpx = function (points) {
+/**
+ * @desc Fetch the elevation coordinates for the given points.
+ * @param {point[]} points - the points
+ * @return {object} - the action
+ */
+module.exports.fetchElevations = function (points) {
+    // a unique token representing the current request
+    const token = uuidV4();
+
     return function (dispatch) {
-        dispatch(disableControls(true));
-        dispatch(elevationAction.fetchForLocations(points));
+        dispatch({
+            type: Types.UPDATING_ELEVATIONS,
+            token: token
+        });
+
+        dispatch(elevationAction.fetchAlongPath(points, token, updateElevations));
     };
 };
 
-module.exports.fetchForLocationsComplete = function (points) {
+const saveGpx = function (token, points) {
     return function (dispatch) {
         dispatch(disableControls(false));
 
@@ -154,6 +150,14 @@ module.exports.fetchForLocationsComplete = function (points) {
         }
     };
 };
+module.exports.exportGpx = function (points) {
+    return function (dispatch) {
+        dispatch(disableControls(true));
+        // the token is set to "", for it's not used for matching
+        // the elevations against the rendered route
+        dispatch(elevationAction.fetchForLocations(points, "", saveGpx));
+    };
+};
 
 module.exports.exportRouteSheet = function (directions) {
     return function () {
@@ -161,3 +165,23 @@ module.exports.exportRouteSheet = function (directions) {
         FileSaver.saveAs(content, "routeSheet.txt");
     };
 };
+
+module.exports.plotAccurateElevationChart = function (points) {
+    // a unique token representing the current request
+    const token = uuidV4();
+
+    return function (dispatch) {
+        dispatch({
+            type: Types.UPDATING_ELEVATIONS,
+            token: token
+        });
+
+        // getElevationsAlongPath - correct elevation aberations in the result set
+        // TODO allow non matching points in the results
+        // TODO do not redraw the elevation chart if the results are null
+        // TODO simplify the point list before calling the callback (ie. remove points
+        // with same elevation if distance between then < 1/1000 of total dist)
+        dispatch(elevationAction.fetchForLocations(points, token, updateElevations));
+    };
+};
+

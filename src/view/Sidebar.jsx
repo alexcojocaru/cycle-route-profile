@@ -30,6 +30,7 @@ var Sidebar = React.createClass({
         elevationLoss: React.PropTypes.number,
         onToggleControls: React.PropTypes.func,
         onTravelModeUpdate: React.PropTypes.func,
+        onSidebarPlotAccurateElevationChart: React.PropTypes.func,
         onRoutesDelete: React.PropTypes.func,
         onSidebarExportGpx: React.PropTypes.func,
         onSidebarExportRouteSheet: React.PropTypes.func,
@@ -97,13 +98,19 @@ var Sidebar = React.createClass({
                     </Box>
                     <Box py={2}>
                         <RaisedButton
+                                label="Plot accurate elevation chart"
+                                onClick={this.props.onSidebarPlotAccurateElevationChart}
+                                title={"Fetch the elevation data for the full path (not just " +
+                                    "the simplified one) and plot the accurate elevation chart"}
+                                disabled={ !this.props.routeExists || this.props.controlsDisabled }
+                        />
+                    </Box>
+                    <Box py={2}>
+                        <RaisedButton
                                 label="Delete route"
                                 onClick={this.props.onRoutesDelete}
                                 title="Delete the current route"
-                                disabled={
-                                    !this.props.routeExists ||
-                                        this.props.controlsDisabled
-                                }
+                                disabled={ !this.props.routeExists || this.props.controlsDisabled }
                         />
                     </Box>
                     <Box pt={2} pb={1}>
@@ -111,10 +118,7 @@ var Sidebar = React.createClass({
                                 label="Export GPX"
                                 onClick={this.props.onSidebarExportGpx}
                                 title="Export the current route as GPX"
-                                disabled={
-                                    !this.props.routeExists ||
-                                        this.props.controlsDisabled
-                                }
+                                disabled={ !this.props.routeExists || this.props.controlsDisabled }
                         />
                     </Box>
                     <Box pt={1} pb={2}>
@@ -122,10 +126,7 @@ var Sidebar = React.createClass({
                                 label="Export route sheet"
                                 onClick={this.props.onSidebarExportRouteSheet}
                                 title="Export the route sheet (aka directions)"
-                                disabled={
-                                    !this.props.routeExists ||
-                                        this.props.controlsDisabled
-                                }
+                                disabled={ !this.props.routeExists || this.props.controlsDisabled }
                         />
                     </Box>
                     <Flex py={2} align="center">

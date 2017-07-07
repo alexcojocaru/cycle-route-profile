@@ -65,6 +65,8 @@ var App = React.createClass({
                     onExportGpx: this.routePlannerAction.exportGpx,
                     onExportRouteSheet: this.routePlannerAction.exportRouteSheet,
                     onRoutesDelete: this.routePlannerAction.deleteRoutes,
+                    onPlotAccurateElevationChart:
+                        this.routePlannerAction.plotAccurateElevationChart,
                     onTravelModeUpdate: this.routePlannerAction.updateTravelMode,
                     onNotification: this.notificationAction.addNotification,
                     endpointSelectionDialogVisible: this.props.endpointSelectionDialogVisible,

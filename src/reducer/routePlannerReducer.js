@@ -55,9 +55,10 @@ const initialState = {
     start: null,
     finish: null,
 
-    // the following is just an intermediate value,
-    // to store the hash of the points list last sent to the elevations svc
-    currentElevationPointsHash: null,
+    // the following is just an intermediate value, to store the unique token used
+    // by the elevations request, to be used later by the update to match against
+    // the token passed by the update elevations action
+    elevationsRequestToken: null,
 
     // the (lat, lng) geo location of the mouse position when the endpoint selection dialog opened;
     // this is an intermediate value, until it's set as start/finish
@@ -147,14 +148,14 @@ const routePlannerReducer = function (state, action) {
         case ActionTypes.UPDATING_ELEVATIONS:
             nextState.elevationsUpdatesCount = nextState.elevationsUpdatesCount + 1;
             nextState.controlsDisabled = true;
-            nextState.currentElevationPointsHash = action.pointsHash;
+            nextState.elevationsRequestToken = action.token;
             break;
         case ActionTypes.UPDATE_ELEVATIONS:
             nextState.elevationsUpdatesCount = nextState.elevationsUpdatesCount - 1;
             nextState.controlsDisabled = nextState.elevationsUpdatesCount > 0;
 
             // overwrite the elevations only if the new one corresponds to the current points list
-            if (action.pointsHash === nextState.currentElevationPointsHash) {
+            if (action.token === nextState.elevationsRequestToken) {
                 nextState.elevations = action.elevations;
 
                 [nextState.elevationGain, nextState.elevationLoss] = elevationParsers

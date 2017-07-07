@@ -62,6 +62,7 @@ describe("routeParsers", function () {
     });
 
     /*
+    TODO remove this
     describe("all points", function () {
         it("all points", function () {
             const routes = [

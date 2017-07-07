@@ -136,3 +136,72 @@ module.exports.concatenatePointsLists = function (pointLists) {
 module.exports.concatenateRouteInstructionsLists = function (instructionsLists) {
     return _.flatten(instructionsLists);
 };
+
+/**
+ * @desc Calculate the 2D distance between the two given points,
+ *    given their lat and lng coordinates.
+ *    Both points are considered to be at sea level.
+ * @param {point} point1 - a point
+ * @param {point} point2 - another point
+ * @return {number} - the distance in meters
+ */
+module.exports.calculate2dDistance = function (point1, point2) {
+    const seaLevel = 6371000;
+
+    const lat1 = point1.lat * Math.PI / 180;
+    const lat2 = point2.lat * Math.PI / 180;
+
+    const lng1 = point1.lng * Math.PI / 180;
+    const lng2 = point2.lng * Math.PI / 180;
+
+    // formulas taken from http://answers.google.com/answers/threadview?id=326655
+    const x1 = seaLevel * Math.cos(lat1) * Math.sin(lng1);
+    const y1 = seaLevel * Math.sin(lat1);
+    const z1 = seaLevel * Math.cos(lat1) * Math.cos(lng1);
+
+    const x2 = seaLevel * Math.cos(lat2) * Math.sin(lng2);
+    const y2 = seaLevel * Math.sin(lat2);
+    const z2 = seaLevel * Math.cos(lat2) * Math.cos(lng2);
+
+    return Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2) + Math.pow((z2 - z1), 2));
+};
+
+/**
+ * @desc Calculate the distance between the two given points,
+ *    given their lat, lng and ele coordinates.
+ *    If the elevation is not set on any of the points, it's considered to be 0.
+ *    If the elevation is not set on only one point, it's considered to be equal
+ *    to the elevation on the other point.
+ * @param {point} point1 - a point
+ * @param {point} point2 - another point
+ * @return {number} - the distance in meters
+ */
+module.exports.calculate3dDistance = function (point1, point2) {
+    const eleSafe1 = typeof point1.ele !== "undefined" && point1.ele !== null
+            ? point1.ele
+            : (point2.ele || 0);
+    const eleSafe2 = typeof point2.ele !== "undefined" && point2.ele !== null
+            ? point2.ele
+            : (point1.ele || 0);
+
+    // correct the elevations by adding the Earth radius
+    const ele1 = 6371000 + parseFloat(eleSafe1);
+    const ele2 = 6371000 + parseFloat(eleSafe2);
+
+    const lat1 = point1.lat * Math.PI / 180;
+    const lat2 = point2.lat * Math.PI / 180;
+
+    const lng1 = point1.lng * Math.PI / 180;
+    const lng2 = point2.lng * Math.PI / 180;
+
+    // formulas taken from http://answers.google.com/answers/threadview?id=326655
+    const x1 = ele1 * Math.cos(lat1) * Math.sin(lng1);
+    const y1 = ele1 * Math.sin(lat1);
+    const z1 = ele1 * Math.cos(lat1) * Math.cos(lng1);
+
+    const x2 = ele2 * Math.cos(lat2) * Math.sin(lng2);
+    const y2 = ele2 * Math.sin(lat2);
+    const z2 = ele2 * Math.cos(lat2) * Math.cos(lng2);
+
+    return Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2) + Math.pow((z2 - z1), 2));
+};

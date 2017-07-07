@@ -19,15 +19,20 @@ var RoutePlanner = React.createClass({
          */
         routeExists: React.PropTypes.bool,
         onRoutesUpdate: React.PropTypes.func,
+        onPlotAccurateElevationChart: React.PropTypes.func,
         onExportGpx: React.PropTypes.func
     },
 
+    _getCompletePointsList: function () {
+        return parsers.concatenatePointsLists(this.map._getCompletePointsLists());
+    },
+
+    _onPlotAccurateElevationChart: function () {
+        this.props.onPlotAccurateElevationChart(this._getCompletePointsList());
+    },
+
     _onExportGpx: function () {
-        this.props.onExportGpx(
-            parsers.concatenatePointsLists(
-                this.map._getCompletePointsLists()
-            )
-        );
+        this.props.onExportGpx(this._getCompletePointsList());
     },
 
     _onExportRouteSheet: function () {
@@ -71,6 +76,7 @@ var RoutePlanner = React.createClass({
                 </PanelGroup>
                 <EndpointSelectionDialog {...this.props} />
                 <Sidebar {...this.props}
+                        onSidebarPlotAccurateElevationChart={this._onPlotAccurateElevationChart}
                         onSidebarExportGpx={this._onExportGpx}
                         onSidebarExportRouteSheet={this._onExportRouteSheet}
                 />

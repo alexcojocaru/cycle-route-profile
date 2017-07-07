@@ -7,9 +7,9 @@ const _ = require("underscore");
 const FetchStatus = require("../constant/elevationConstant").FetchStatus;
 const notificationAction = require("./notificationAction");
 const NotificationLevel = require("../constant/notificationConstant").Level;
-const routePlannerAction = require("./routePlannerAction");
 const logger = require("../util/logger").logger("ElevationAction");
 const conversions = require("../util/mapsApiConversions");
+const parsers = require("../util/routeParsers");
 
 /*
  * The Elevation APIs limitations are:
@@ -104,21 +104,23 @@ Error message: ${errorMessage}`
 
 /**
  * @desc Map the given results (which correspond to a path) to a list of pointWithDistance points.
+ *     The given results are considered to be equidistant.
  * @param {google.maps.ElevationResult[]} results - the response of the get elevations request
- * @param {number} pathDistance - the distance of the path being mapped
- * @param {number} baseDistance - the distance between the global origin
+ *     (they are equidistant along the path)
+ * @param {number} pathLength - the length of the path being mapped
+ * @param {number} baseLength - the length between the global origin
  *     and the origin of the path being maped
  * @return {pointWithDistance[]} - the list of points with distance and elevation,
  *     corresponding to the given results
  */
-const mapToPointsWithElevationAndDistance = function (results, pathDistance, baseDistance) {
-    const legDistance = pathDistance / (results.length - 1);
+const mapEquidistantPointsWithElevation = function (results, pathLength, baseLength) {
+    const legLength = pathLength / (results.length - 1);
     return _.map(results, (result, index) => {
         return {
             lat: result.location.lat(),
             lng: result.location.lng(),
             ele: Math.round(result.elevation * 100) / 100,
-            dist: baseDistance + Math.round(legDistance * index)
+            dist: baseLength + Math.round(legLength * index)
         };
     });
 };
@@ -128,23 +130,21 @@ const mapToPointsWithElevationAndDistance = function (results, pathDistance, bas
  *     The points on the path are considered to be equidistant.
  *     The elevation attribute is not set on the results.
  * @param {point[]} points - the points to map
- * @param {number} pathDistance - the distance of the path being mapped
- * @param {number} baseDistance - the distance between the global origin
+ * @param {number} pathLength - the length of the path being mapped
+ * @param {number} baseLength - the length between the global origin
  *     and the origin of the path being maped
  * @return {pointWithDistance[]} - the list of points with distance,
  *     corresponding to the given points.
  */
-const mapToPointsWithDistance = function (points, pathDistance, baseDistance) {
-    const legDistance = pathDistance / (points.length - 1);
-    return _.map(
-        points,
-        (point, index) => _.extend(
-            {
-                dist: baseDistance + Math.round(legDistance * index)
-            },
-            point
-        )
-    );
+const mapEquidistantPoints = function (points, pathLength, baseLength) {
+    const legLength = pathLength / (points.length - 1);
+    return _.map(points, (point, index) => {
+        return {
+            lat: point.lat,
+            lng: point.lng,
+            dist: baseLength + Math.round(legLength * index)
+        };
+    });
 };
 
 /**
@@ -174,7 +174,7 @@ const buildFetchAlongPathPromise = function (elevationSvc, pathWithDistance) {
 
                 let pathElevations;
                 if (status === google.maps.ElevationStatus.OK) {
-                    pathElevations = mapToPointsWithElevationAndDistance(
+                    pathElevations = mapEquidistantPointsWithElevation(
                         results,
                         pathWithDistance.distance,
                         baseDistance
@@ -184,7 +184,7 @@ const buildFetchAlongPathPromise = function (elevationSvc, pathWithDistance) {
                     logger.error("The getElevationAlongPath request for path:", pathWithDistance,
                             "failed with status:", status, "and results:", results);
 
-                    pathElevations = mapToPointsWithDistance(
+                    pathElevations = mapEquidistantPoints(
                         pathWithDistance.path,
                         pathWithDistance.distance,
                         baseDistance
@@ -196,7 +196,7 @@ const buildFetchAlongPathPromise = function (elevationSvc, pathWithDistance) {
                 logger.trace("Finished processing path:", pathWithDistance,
                         "; elevations:", newElevations);
         
-                setTimeout(() => resolve(newElevations), 300);
+                setTimeout(() => resolve(newElevations), 1000);
             });
         });
     };
@@ -209,11 +209,14 @@ const buildFetchAlongPathPromise = function (elevationSvc, pathWithDistance) {
  *     each path has a variable number of points and a distance, and I need to know the distance
  *     between the samples, in order to plot the elevation chart correctly.
  * @param {pathWithDistance[]} pathWithDistanceLists - the list of paths with distances
- * @param {string} pointsHash - the hash of the given path points
+ * @param {string} token - a unique token to be passed back to the action creator
+ * @param {function} callback - once the elevation data has been fetched, a message generated
+ *     by the callback function (which is called with the given token
+ *     and the elevations array as param) is dispatched
  * @return {function} - an action
  */
-module.exports.fetchAlongPath = function (pathWithDistanceLists, pointsHash) {
-    logger.debug("Fetching along paths:", pathWithDistanceLists, "; hash:", pointsHash);
+module.exports.fetchAlongPath = function (pathWithDistanceLists, token, callback) {
+    logger.debug("Fetching along paths:", pathWithDistanceLists, "; token:", token);
 
     return function (dispatch) {
         dispatchFetchAlongPathProgressNotifications(dispatch);
@@ -234,7 +237,7 @@ module.exports.fetchAlongPath = function (pathWithDistanceLists, pointsHash) {
         promise.then(function (elevations) {
             logger.debug("Successfully fetched along paths");
             dispatchSuccessNotifications(dispatch);
-            dispatch(routePlannerAction.updateElevations(pointsHash, elevations));
+            dispatch(callback(token, elevations));
         }).catch(function (reason) {
             logger.error(
                 "Could not fetch elevations along paths:", pathWithDistanceLists,
@@ -247,48 +250,105 @@ module.exports.fetchAlongPath = function (pathWithDistanceLists, pointsHash) {
 
 
 /**
+ * @desc Whether the given elevation result is close enough to the given point
+ *     and its elevation coordinate can be used.
+ * @param {google.maps.ElevationResult} elevationResult - an elevation result
+ * @param {point} point - a point
+ * @return {boolean} - whether the elevation result is close enough to the given point or not
+ */
+const allowElevationResult = function (elevationResult, point) {
+    // compare the latitude and longitude of the current result and point;
+    // they should match to the (and including) 5th decimal
+    // (that's the rough equivalent of 1.1 meters).
+    const resultLat = elevationResult.location.lat();
+    const resultLng = elevationResult.location.lng();
+
+    const roundFactor = Math.pow(10, 5);
+
+    let allow;
+    if (Math.round(resultLat * roundFactor) !== Math.round(point.lat * roundFactor) ||
+           Math.round(resultLng * roundFactor) !== Math.round(point.lng * roundFactor)) {
+        logger.warn(
+                `Coordinates don't match for the given point and the corresponding result; point={${
+                    point.lat
+                }, ${
+                    point.lng
+                }, result={${
+                    resultLat
+                }, ${
+                    resultLng
+                }}`);
+        allow = false;
+    }
+    else {
+        allow = true;
+    }
+    return allow;
+};
+
+/**
+ * @desc Given a points list, find the last point with elevation in the list.
+ *     If no such point exists, make one up with the lat,lng coordinates
+ *     of the last one in the list.
+ * @param {point[]} points - the points list (must be not empty)
+ * @return {point} - the last point with elevation, or a mock one without elevation
+ */
+const findLastPointWithElevation = function (points) {
+    // find the last point with elevation
+    let result = _.find(points.slice().reverse(), p => p.ele !== null);
+
+    if (typeof result === "undefined") {
+        const last = _.last(points);
+        result = {
+            lat: last.lat,
+            lng: last.lng,
+            dist: last.dist
+        };
+    }
+
+    return result;
+};
+
+/**
  * @desc Map the given points to a list of points with elevation data, extracted from
  *     the given elevation query results.
  *     It is considered to be a 1-to-1 mapping between the points and the results.
  * @param {point[]} points - the points to map
  * @param {google.maps.ElevationResult[]} results - the elevation query results for the given points
+ * @param {point} basePoint - the point to be used to calculate the base distance;
+ *     it can be null only if this is the first partition to be processed
  * @return {point[]} - a list of points with elevation coordinate
  */
-const mapToPointsWithElevation = function (points, results) {
-    const roundFactor = Math.pow(10, 5);
-
-    return _.map(points, (point, index) => {
+const mapPointsWithElevation = function (points, results, basePoint) {
+    // old school iteration, just because I need access to the previously computed elements
+    const pointsWithElevation = [];
+    _.each(points, (point, index) => {
         const result = results[index];
+        const elevation = allowElevationResult(result, point) ? result.elevation.toFixed(2) : null;
+        const pointWithElevation = {
+            lat: point.lat,
+            lng: point.lng,
+            ele: elevation
+        };
 
-        // compare the latitude and longitude of the current result and point;
-        // they should match to the (and including) 5th decimal
-        // (that's the rough equivalent of 1.1 meters).
-        const resultLat = result.location.lat();
-        const resultLng = result.location.lng();
-
-        let elevation;
-        if (Math.round(resultLat * roundFactor) !== Math.round(point.lat * roundFactor) ||
-               Math.round(resultLng * roundFactor) !== Math.round(point.lng * roundFactor)) {
-            logger.warn(
-                    `Coordinates don't match for point at index ${
-                        index
-                    } and the corresponding result; point={${
-                        point.lat
-                    }, ${
-                        point.lng
-                    }, result={${
-                        resultLat
-                    }, ${
-                        resultLng
-                    }}`);
-            elevation = null;
+        let distance;
+        if (index === 0 && !basePoint) {
+            distance = 0;
+        }
+        else if (index === 0) {
+            distance = basePoint.dist + parsers.calculate3dDistance(basePoint, pointWithElevation);
         }
         else {
-            elevation = result.elevation.toFixed(2);
+            const prev = findLastPointWithElevation(_.first(pointsWithElevation, index));
+            distance = prev.dist + parsers.calculate3dDistance(prev, pointWithElevation);
         }
 
-        return _.extend({ ele: elevation }, point);
+        pointWithElevation.dist = distance;
+
+        pointsWithElevation.push(pointWithElevation);
     });
+
+    return pointsWithElevation;
 };
 
 /**
@@ -319,7 +379,10 @@ const buildFetchForLocationsPromise = function (elevationSvc, points, onStart) {
                         "; results:", results);
 
                 if (status === google.maps.ElevationStatus.OK) {
-                    const pathElevations = mapToPointsWithElevation(points, results);
+                    const basePoint = _.isEmpty(elevations)
+                            ? null
+                            : findLastPointWithElevation(elevations);
+                    const pathElevations = mapPointsWithElevation(points, results, basePoint);
                     const newElevations = [...elevations, ...pathElevations];
           
                     logger.trace("Finished processing locations:", points,
@@ -343,9 +406,13 @@ const buildFetchForLocationsPromise = function (elevationSvc, points, onStart) {
 /**
  * @desc Fetch the elevation coordinates for the given points.
  * @param {point[]} points - the points
+ * @param {string} token - a unique token to be passed back to the action creator
+ * @param {function} callback - once the elevation data has been fetched, a message generated
+ *     by the callback function (which is called with the given token
+ *     and the elevations array as param) is dispatched
  * @return {function} - an action
  */
-module.exports.fetchForLocations = function (points) {
+module.exports.fetchForLocations = function (points, token, callback) {
     logger.debug("Fetching for locations:", points);
 
     const partitionSize = 100;
@@ -384,14 +451,14 @@ module.exports.fetchForLocations = function (points) {
         promise.then(function (elevations) {
             logger.debug("Successfully fetched elevations for locations");
             dispatchSuccessNotifications(dispatch);
-            dispatch(routePlannerAction.fetchForLocationsComplete(elevations));
+            dispatch(callback(token, elevations));
         }).catch(function (reason) {
             logger.error(
                 "Could not fetch elevations for locations:", points,
                 "; reason:", reason
             );
             dispatchErrorNotifications(dispatch);
-            dispatch(routePlannerAction.fetchForLocationsComplete(null));
+            dispatch(callback(token, null));
         });
     };
 };

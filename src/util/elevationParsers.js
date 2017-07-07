@@ -3,6 +3,7 @@
 const _ = require("underscore");
 
 const logger = require("./logger").logger("ElevationParsers");
+const parsers = require("./routeParsers");
 
 
 /**
@@ -182,9 +183,7 @@ module.exports.findClosestPoint = function (points, point) {
     let closestDistance = -1;
 
     _.each(points, (currentPoint, index) => {
-        const distance = Math.sqrt(
-                Math.pow(currentPoint.lat - point.lat, 2) +
-                Math.pow(currentPoint.lng - point.lng, 2));
+        const distance = parsers.calculate2dDistance(currentPoint, point);
         if (closestDistance === -1 || distance < closestDistance) {
             closestDistance = distance;
             closestPointIndex = index;

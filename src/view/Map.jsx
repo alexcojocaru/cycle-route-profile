@@ -3,7 +3,6 @@
 
 const React = require("react");
 const _ = require("underscore");
-const hashPoints = require("../util/hash").hashPoints;
 
 const logger = require("../util/logger").logger("Map");
 const TravelModePropValidator = require("../util/routeValidators").TravelModePropValidator;
@@ -342,15 +341,7 @@ const Map = React.createClass({
             const pathWithDistanceLists = conversions.getPathWithDistanceLists(
                 this.routesDirections
             );
-            const pointsHash = hashPoints(
-                _.flatten(
-                    _.map(
-                        pathWithDistanceLists,
-                        pwd => pwd.path
-                    )
-                )
-            );
-            this.props.onFetchElevations(pathWithDistanceLists, pointsHash);
+            this.props.onFetchElevations(pathWithDistanceLists);
         }
     },
 
