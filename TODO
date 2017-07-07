@@ -1,12 +1,10 @@
 TODO
 ====
 
-Disable the Google route directions while the elevations are being fetched.
+AboutTooltip.jsx
+	Double check the project URL.
 
-do I stil need promises? If no, remove the polyfill from App.jsx and package.json
-
-update the max route point count / split route point count in routeModifiers
-
-reset the log levels in logger.js
+Map.jsx:
+	Disable the Google route directions while the elevations are being fetched.
 
 catch the expired API key error and display a message in the UI

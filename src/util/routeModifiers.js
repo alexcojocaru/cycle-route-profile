@@ -6,10 +6,8 @@ const hashFunction = require("../util/hash").hashPoints;
 const builders = require("./routeBuilders");
 const parsers = require("./routeParsers");
 
-// TODO 25
-const MAX_ROUTE_POINT_COUNT = 5; // how many point we allow on a route before we split it
-// TODO 15
-const SPLIT_POINT_COUNT = 4; // how many points to put on the first split segment
+const MAX_ROUTE_POINT_COUNT = 25; // how many point we allow on a route before we split it
+const SPLIT_POINT_COUNT = 15; // how many points to put on the first split segment
 
 /**
  * @desc Given a route, move its start point to the next route and remove it from the list.
@@ -26,6 +24,7 @@ const collapseCurrentRouteToNext = function (routes, index) {
     nextRoute.points.splice(0, 0, _.first(route.points));
 
     nextRoute.hash = hashFunction(nextRoute.points);
+    nextRoute.path = [];
 };
 
 /**
@@ -44,6 +43,7 @@ const collapseNextRouteToCurrent = function (routes, index) {
     route.points.splice(route.points.length, 0, _.last(nextRoute.points));
 
     route.hash = hashFunction(route.points);
+    route.path = [];
 };
 
 /**
@@ -108,8 +108,10 @@ const deleteWaypoint = function (routes, waypoint) {
             if (updateNextRoute) {
                 nextRoute.points.splice(0, 0, _.last(route.points));
                 nextRoute.hash = hashFunction(nextRoute.points);
+                nextRoute.path = [];
             }
             route.hash = hashFunction(route.points);
+            route.path = [];
         }
     }
 
@@ -166,6 +168,7 @@ const splitRoutes = function (routes) {
 const resetStart = function (route, point) {
     route.points[0] = builders.clonePoint(point);
     route.hash = hashFunction(route.points);
+    route.path = [];
 };
 
 /**
@@ -177,6 +180,7 @@ const resetStart = function (route, point) {
 const resetFinish = function (route, point) {
     route.points[route.points.length - 1] = builders.clonePoint(point);
     route.hash = hashFunction(route.points);
+    route.path = [];
 };
 
 /**

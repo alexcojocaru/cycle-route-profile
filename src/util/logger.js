@@ -14,9 +14,9 @@ const Level = keyMirror({
 module.exports.Level = Level;
 
 const LoggerConfig = {
-    root: Level.TRACE,
+    root: Level.INFO,
     // define levels for specific component names as needed
-    ElevationChart: Level.TRACE
+    ElevationChart: Level.INFO
 };
 
 const Logger = function (name) {

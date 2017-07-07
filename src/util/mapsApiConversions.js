@@ -263,8 +263,14 @@ module.exports.convertGoogleWaypointList = convertGoogleWaypointList;
  */
 const convertGoogleRoute = function (googleRoute) {
     const distance = calculators.totalDistance(googleRoute);
+
     const points = calculators.mergeRouteLegs(googleRoute);
-    const path = googleRoute.overview_polyline;
+
+    // TODO alex - toggle the 2 lines below if I want the complete path instead of the simplied one
+    //    (caveat: the point list could get very very long)
+    // const path = calculators.mergeRoutePoints(googleRoute);
+    const path = convertGoogleWaypointList(googleRoute.overview_path);
+
     const route = {
         points: points,
         hash: hashFunction(points),

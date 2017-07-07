@@ -46,7 +46,7 @@ module.exports.findWaypointWithinBounds = findWaypointWithinBounds;
  * @descr Merge the waypoints on the given route legs into a single list of simple waypoints.
  *     The Google Maps API must be loaded for this function to work.
  * @param {google.maps.DirectionsRoute} route - a google route
- * @return {array} - a list of simple waypoint objects as {lat, lng}
+ * @return {point[]} - a list of simple waypoint objects as {lat, lng}
  */
 const mergeRouteLegs = function (route) {
     const waypoints = [];
@@ -67,6 +67,33 @@ const mergeRouteLegs = function (route) {
     return simpleWaypoints;
 };
 module.exports.mergeRouteLegs = mergeRouteLegs;
+
+/**
+ * @descr Merge the points on each leg path on the given route.
+ *     The Google Maps API must be loaded for this function to work.
+ * @param {google.maps.DirectionsRoute} route - a google route
+ * @return {point[]} - a list of simple point objects as {lat, lng}
+ */
+const mergeRoutePoints = function (route) {
+    const points = [];
+    _.each(route.legs, leg => {
+        _.each(leg.steps, step => {
+            if (step.path.length > 0) {
+                // don't add the first point if it's equal to the previous last one
+                if (!_.first(step.path).equals(_.last(points))) {
+                    points.push(_.first(step.path));
+                }
+                points.push(..._.rest(step.path));
+            }
+        });
+    });
+
+    // convert from google.maps.LatLng to {lat, lng} objects
+    const simplePoints = conversions.convertGoogleWaypointList(points);
+
+    return simplePoints;
+};
+module.exports.mergeRoutePoints = mergeRoutePoints;
 
 /**
  * @descr Calculate the total distance between all the legs of the given route.

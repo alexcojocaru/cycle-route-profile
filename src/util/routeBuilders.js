@@ -35,6 +35,7 @@ const cloneRoute = function (route) {
         points: points,
         hash: hashFunction(points),
         distance: route.distance,
+        path: route.path,
         elevations: route.elevations
     };
 };

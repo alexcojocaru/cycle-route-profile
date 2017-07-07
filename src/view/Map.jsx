@@ -302,7 +302,7 @@ const Map = React.createClass({
         }
         else if (oldRoute.distance !== newRoute.distance) {
             logger.debug("route distance changed; old:", oldRoute.distance,
-                         "; new:", newRoute.distance);
+                    "; new:", newRoute.distance);
 
             // update the local route list, to avoid a renderer update (and another event cycle)
             // when the new route list is sent to this component as prop
@@ -320,7 +320,7 @@ const Map = React.createClass({
 
         if (fetchElevations) {
             logger.debug("Route", routeHash, "has settled down; fetching elevations");
-            this.props.onFetchElevations(parsers.allPoints(this.routes));
+            this.props.onFetchElevations(parsers.allPathPoints(this.routes));
         }
     },
 

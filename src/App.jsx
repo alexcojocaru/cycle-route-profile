@@ -3,10 +3,6 @@
 // reference the static assets, to be processed/bundled by the webpack plugins
 require("./css/main.css");
 
-// TODO do I need this?
-// provides support for promises
-require("babel-polyfill");
-
 var React = require("react");
 var ReactDOM = require("react-dom");
 

@@ -110,19 +110,19 @@ const areRoutesSame = function (routes, others) {
 module.exports.areRoutesSame = areRoutesSame;
 
 /**
- * @desc Flatten the points array on the given routes. The resulting array will not
+ * @desc Flatten the paths on the given routes. The resulting array will not
  *    contain the first point on each subsequent route (for it's considered to be
  *    a duplicate of the last point on the previous route).
- * @param {route[]} routes - the routes containing the points arrays to flatten
+ * @param {route[]} routes - the routes containing the paths arrays to flatten
  * @return {point[]} - a flat array of points
  */
-const allPoints = function (routes) {
+const allPathPoints = function (routes) {
     return _.flatten(
         _.map(routes, (route, index) => {
             // the first point on each subsequent route is a duplicate
             // of the last point on the previous route
-            return _.rest(route.points, index > 0 ? 1 : 0);
+            return _.rest(route.path, index > 0 ? 1 : 0);
         })
     );
 };
-module.exports.allPoints = allPoints;
+module.exports.allPathPoints = allPathPoints;

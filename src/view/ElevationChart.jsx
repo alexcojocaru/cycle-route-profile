@@ -114,7 +114,6 @@ const ElevationChart = React.createClass({
     },
 
     // TODO
-    // get elevations along the actual route, not along the straight line
     // show the horizontal and vertical line (sight like) on chart
     // fix the grade calculation - it's too extreme
     //      calculate the true distance between two geodesic points

@@ -19,7 +19,6 @@ var AboutTooltip = React.createClass({
     },
 
     render: function () {
-        // TODO double check the project URL
         return (
             <div>
                 <img id="aboutTooltip"

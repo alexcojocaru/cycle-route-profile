@@ -10,7 +10,6 @@
     "url": "https://github.com/alexcojocaru/cycle-route-profile.git"
   },
   "dependencies": {
-    "babel-polyfill": "6.20.0",
     "chart.js": "2.5.0",
     "classnames": "2.2.5",
     "fbjs": "0.7.2",

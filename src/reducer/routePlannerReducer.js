@@ -9,12 +9,11 @@
 
 /**
  * @typedef {object} route
- * @property {point[]} points - array of route points
+ * @property {point[]} points - array of route [way]points
  * @property {string} hash - the route hash
  * @property {number} distance - the distance
  *    these are not necessary the same points as on the 'points' property
- * @property {string} path - the encoded route path;
- *    see https://developers.google.com/maps/documentation/utilities/polylinealgorithm
+ * @property {point[]} path - the list of points which describe the course of the map
  */
 
 const _ = require("underscore");
@@ -136,7 +135,7 @@ const routePlannerReducer = function (state, action) {
             nextState.controlsDisabled = nextState.elevationsUpdatesCount > 0;
 
             // overwrite the elevations only if the new one corresponds to the current points list
-            if (action.pointsHash === hash.hashPoints(parsers.allPoints(nextState.routes))) {
+            if (action.pointsHash === hash.hashPoints(parsers.allPathPoints(nextState.routes))) {
                 nextState.elevations = action.elevations;
             }
 
