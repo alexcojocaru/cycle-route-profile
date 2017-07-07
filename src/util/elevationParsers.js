@@ -206,3 +206,28 @@ module.exports.findClosestPoint = function (points, point) {
         index: closestPointIndex
     };
 };
+
+/**
+ * @desc Calculate the total elevation gain and elevation loss across the given points list.
+ * @param {point[]} points - a list of points with elevation
+ * @return {number[]} - the total elevation gain and loss
+ */
+module.exports.totalElevationGainAndLoss = function (points) {
+    let gain = 0;
+    let loss = 0;
+
+    let previous;
+    _.each(points, (point, index) => {
+        const elevationChange = index === 0 ? 0 : (point.ele - previous.ele);
+        previous = point;
+
+        if (elevationChange > 0) {
+            gain += elevationChange;
+        }
+        else if (elevationChange < 0) {
+            loss += elevationChange;
+        }
+    });
+
+    return [Math.round(gain), Math.round(loss)];
+};

@@ -27,6 +27,7 @@ const EndpointType = require("../constant/routePlannerConstant").EndpointType;
 const builders = require("../util/routeBuilders");
 const modifiers = require("../util/routeModifiers");
 const parsers = require("../util/routeParsers");
+const elevationParsers = require("../util/elevationParsers");
 
 const initialState = {
     travelMode: TravelMode.ROAD,
@@ -38,6 +39,10 @@ const initialState = {
 
     // the total distance across all routes
     distance: 0,
+
+    // the total elevation gain and loss across all routes
+    elevationGain: 0,
+    elevationLoss: 0,
 
     // the following two are just intermediate values, until both are set and the route is valid
     start: null,
@@ -107,6 +112,8 @@ const routePlannerReducer = function (state, action) {
             nextState.routes = [];
             nextState.routeExists = false;
             nextState.distance = 0;
+            nextState.elevationGain = 0;
+            nextState.elevationLoss = 0;
             nextState.elevations = [];
             break;
         case ActionTypes.UPDATE_TRAVEL_MODE:
@@ -137,6 +144,9 @@ const routePlannerReducer = function (state, action) {
             // overwrite the elevations only if the new one corresponds to the current points list
             if (action.pointsHash === hash.hashPoints(parsers.allPathPoints(nextState.routes))) {
                 nextState.elevations = action.elevations;
+
+                [nextState.elevationGain, nextState.elevationLoss] = elevationParsers
+                        .totalElevationGainAndLoss(nextState.elevations);
             }
 
             break;

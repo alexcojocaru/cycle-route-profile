@@ -26,6 +26,8 @@ var Sidebar = React.createClass({
         travelMode: TravelModePropValidator,
         routeExists: React.PropTypes.bool,
         distance: React.PropTypes.number,
+        elevationGain: React.PropTypes.number,
+        elevationLoss: React.PropTypes.number,
         onToggleControls: React.PropTypes.func,
         onTravelModeUpdate: React.PropTypes.func,
         onRoutesDelete: React.PropTypes.func,
@@ -84,9 +86,17 @@ var Sidebar = React.createClass({
                             }
                         </SelectField>
                     </Box>
-                    <Box py={2}>
+                    <Box pt={2} pb={0}>
                         <span className="label">Distance:</span>
                         {formatters.formatDistance(this.props.distance)}
+                    </Box>
+                    <Box py={0}>
+                        <span className="label">Elevation gain:</span>
+                        {this.props.elevationGain}m
+                    </Box>
+                    <Box pt={0} pb={2}>
+                        <span className="label">Elevation loss:</span>
+                        {this.props.elevationLoss}m
                     </Box>
                     <Box py={2}>
                         <RaisedButton
