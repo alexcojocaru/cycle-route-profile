@@ -142,6 +142,13 @@ const routePlannerReducer = function (state, action) {
             nextState.controlsDisabled = nextState.elevationsUpdatesCount > 0;
 
             // overwrite the elevations only if the new one corresponds to the current points list
+
+            // TODO user the complete path, to get a more accurate elevation profile;
+            // currently the google API limits the number of points to around 200
+            // (http://stackoverflow.com/q/11420176);
+            // enable the corresponding change in Map.jsx:328
+            // if (action.pointsHash === hash.hashPoints(parsers.allCompletePathPoints(nextState.routes))) {
+
             if (action.pointsHash === hash.hashPoints(parsers.allPathPoints(nextState.routes))) {
                 nextState.elevations = action.elevations;
 

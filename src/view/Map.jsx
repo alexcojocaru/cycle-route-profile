@@ -320,6 +320,13 @@ const Map = React.createClass({
 
         if (fetchElevations) {
             logger.debug("Route", routeHash, "has settled down; fetching elevations");
+
+            // TODO user the complete path, to get a more accurate elevation profile;
+            // currently the google API limits the number of points to around 200
+            // (http://stackoverflow.com/q/11420176)
+            // enable the corresponding change in RoutePlannerReducer.js:150
+            // this.props.onFetchElevations(parsers.allCompletePathPoints(this.routes));
+
             this.props.onFetchElevations(parsers.allPathPoints(this.routes));
         }
     },

@@ -108,7 +108,7 @@ module.exports.fetchAlongPath = function (points) {
          * - 512 locations per request
          * - 50 requests per second
          */
-        logger.trace("Sending get-elevations request");
+        logger.trace("Sending get-elevations request for points:", points);
         const elevator = new google.maps.ElevationService();
         elevator.getElevationAlongPath({
             path: _.map(points, point => new google.maps.LatLng(point.lat, point.lng)),
