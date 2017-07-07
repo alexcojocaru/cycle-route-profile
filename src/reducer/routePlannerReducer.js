@@ -26,7 +26,6 @@
 
 const _ = require("underscore");
 
-const hash = require("../util/hash");
 const logger = require("../util/logger").logger("RoutePlannerReducer");
 const ActionTypes = require("../action/routePlannerAction").Types;
 const TravelMode = require("../constant/routePlannerConstant").TravelMode;

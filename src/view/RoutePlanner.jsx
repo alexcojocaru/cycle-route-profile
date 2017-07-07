@@ -2,7 +2,6 @@
 
 var React = require("react");
 var PanelGroup = require("react-panelgroup");
-var _ = require("underscore");
 
 const logger = require("../util/logger").logger("RoutePlanner");
 var Map = require("./Map.jsx");
@@ -19,12 +18,13 @@ var RoutePlanner = React.createClass({
          * therefore I cannot mark the required one as such.
          */
         routeExists: React.PropTypes.bool,
-        onRoutesUpdate: React.PropTypes.func
+        onRoutesUpdate: React.PropTypes.func,
+        onExportGpx: React.PropTypes.func
     },
 
     _onExportGpx: function () {
         this.props.onExportGpx(
-            parsers.concatenatePointLists(
+            parsers.concatenatePointsLists(
                 this.map._getCompletePointsLists()
             )
         );
@@ -51,8 +51,8 @@ var RoutePlanner = React.createClass({
                         spacing={2}
                         borderColor="grey"
                         panelWidths={[
-                            {minSize:150, resize: "stretch"},
-                            {size: 200, minSize:200, resize: "dynamic"}
+                            { minSize: 150, resize: "stretch" },
+                            { size: 200, minSize: 200, resize: "dynamic" }
                         ]}>
                     <Map ref={ map => { this.map = map; } }
                             {...this.props}
@@ -62,7 +62,7 @@ var RoutePlanner = React.createClass({
                             onHighlightActiveChartPoint={this._onHighlightActiveChartPoint} />
                 </PanelGroup>
                 <EndpointSelectionDialog {...this.props} />
-                <Sidebar { ..._.extend(this.props, { onExportGpx: this._onExportGpx }) } />
+                <Sidebar {...this.props} onSidebarExportGpx={this._onExportGpx} />
             </div>
         );
     }

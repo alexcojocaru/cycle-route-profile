@@ -3,7 +3,7 @@
 
 const React = require("react");
 const _ = require("underscore");
-const hash = require("../util/hash");
+const hashPoints = require("../util/hash").hashPoints;
 
 const logger = require("../util/logger").logger("Map");
 const TravelModePropValidator = require("../util/routeValidators").TravelModePropValidator;
@@ -62,6 +62,14 @@ const Map = React.createClass({
     mapZoomListener: null,
     mapTilesLoadedListener: null,
 
+
+    /**
+     * @desc Build and return the complete point list which describe the routes being rendered.
+     * @return {point[]} - the points list
+     */
+    _getCompletePointsLists: function () {
+        return conversions.getCompletePointsLists(this.routesDirections);
+    },
 
     /**
      * @desc Highlight the given point on the map as a route active point.
@@ -323,8 +331,10 @@ const Map = React.createClass({
         if (fetchElevations) {
             logger.debug("Route", routeHash, "has settled down; fetching elevations");
 
-            const pathWithDistanceLists = conversions.getPathWithDistanceLists(this.routesDirections);
-            const pointsHash = hash.hashPoints(
+            const pathWithDistanceLists = conversions.getPathWithDistanceLists(
+                this.routesDirections
+            );
+            const pointsHash = hashPoints(
                 _.flatten(
                     _.map(
                         pathWithDistanceLists,
@@ -350,8 +360,6 @@ const Map = React.createClass({
     },
 
     _initMap: function () {
-        const self = this;
-
         const mapElement = document.getElementById("map");
         this.map = builders.newMap(mapElement);
         this.mapDomClickListener = google.maps.event.addDomListener(

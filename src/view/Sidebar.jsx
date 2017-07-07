@@ -31,7 +31,7 @@ var Sidebar = React.createClass({
         onToggleControls: React.PropTypes.func,
         onTravelModeUpdate: React.PropTypes.func,
         onRoutesDelete: React.PropTypes.func,
-        onExportGpx: React.PropTypes.func,
+        onSidebarExportGpx: React.PropTypes.func,
         routes: React.PropTypes.array,
         view: React.PropTypes.string,
         onViewUpdate: React.PropTypes.func,
@@ -108,7 +108,7 @@ var Sidebar = React.createClass({
                     <Box py={2}>
                         <RaisedButton
                                 label="Export GPX"
-                                onClick={this.props.onExportGpx}
+                                onClick={this.props.onSidebarExportGpx}
                                 title="Export the current route as GPX"
                                 disabled={
                                     !this.props.routeExists ||

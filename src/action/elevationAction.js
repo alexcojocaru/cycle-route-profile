@@ -10,7 +10,6 @@ const NotificationLevel = require("../constant/notificationConstant").Level;
 const routePlannerAction = require("./routePlannerAction");
 const logger = require("../util/logger").logger("ElevationAction");
 const conversions = require("../util/mapsApiConversions");
-const routeBuilders = require("../util/routeBuilders");
 
 /*
  * The Elevation APIs limitations are:
@@ -32,6 +31,7 @@ const updateStatus = function (status, message) {
     };
 };
 module.exports.updateStatus = updateStatus;
+
 
 /**
  * @desc Dispatch the notifications for fetching elevations for new points.
@@ -101,15 +101,67 @@ Error message: ${errorMessage}`
     dispatch(updateStatus(FetchStatus.ERROR, errorMessage));
 };
 
+
+/**
+ * @desc Map the given results (which correspond to a path) to a list of pointWithDistance points.
+ * @param {google.maps.ElevationResult[]} results - the response of the get elevations request
+ * @param {number} pathDistance - the distance of the path being mapped
+ * @param {number} baseDistance - the distance between the global origin
+ *     and the origin of the path being maped
+ * @return {pointWithDistance[]} - the list of points with distance and elevation,
+ *     corresponding to the given results
+ */
+const mapToPointsWithElevationAndDistance = function (results, pathDistance, baseDistance) {
+    const legDistance = pathDistance / (results.length - 1);
+    return _.map(results, (result, index) => {
+        return {
+            lat: result.location.lat(),
+            lng: result.location.lng(),
+            ele: Math.round(result.elevation * 100) / 100,
+            dist: baseDistance + Math.round(legDistance * index)
+        };
+    });
+};
+
+/**
+ * @desc Map the given points (which correspond to a path) to a list of pointWithDistance points.
+ *     The points on the path are considered to be equidistant.
+ *     The elevation attribute is not set on the results.
+ * @param {point[]} points - the points to map
+ * @param {number} pathDistance - the distance of the path being mapped
+ * @param {number} baseDistance - the distance between the global origin
+ *     and the origin of the path being maped
+ * @return {pointWithDistance[]} - the list of points with distance,
+ *     corresponding to the given points.
+ */
+const mapToPointsWithDistance = function (points, pathDistance, baseDistance) {
+    const legDistance = pathDistance / (points.length - 1);
+    return _.map(
+        points,
+        (point, index) => _.extend(
+            {
+                dist: baseDistance + Math.round(legDistance * index)
+            },
+            point
+        )
+    );
+};
+
+/**
+ * @desc Build a chainable promise which fetched the elevation coordinate along the given path.
+ * @param {google.maps.ElevationService} elevationSvc - the elevation service
+ * @param {pathWithDistance[]} pathWithDistance - the paths (with total distance information)
+ * @return {function} - a function which returns a promise
+ */
 const buildFetchAlongPathPromise = function (elevationSvc, pathWithDistance) {
     return function (elevations) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function (resolve, reject) { // eslint-disable-line no-unused-vars
             logger.trace("Sending getElevationAlongPath request for path:", pathWithDistance);
 
             elevationSvc.getElevationAlongPath({
                 path: _.map(
                     pathWithDistance.path,
-                    point => new google.maps.LatLng(point.lat, point.lng)
+                    point => conversions.convertAndRoundSimpleCoordinateToGoogle(point)
                 ),
                 samples: 512
             }, function (results, status) {
@@ -122,32 +174,20 @@ const buildFetchAlongPathPromise = function (elevationSvc, pathWithDistance) {
 
                 let pathElevations;
                 if (status === google.maps.ElevationStatus.OK) {
-                    const legDistance = pathWithDistance.distance / (results.length - 1);
-                    pathElevations = _.map(results, (result, index) => {
-                        return {
-                            lat: result.location.lat(),
-                            lng: result.location.lng(),
-                            ele: Math.round(result.elevation * 100) / 100,
-                            dist: baseDistance + Math.round(legDistance * index)
-                        };
-                    });
+                    pathElevations = mapToPointsWithElevationAndDistance(
+                        results,
+                        pathWithDistance.distance,
+                        baseDistance
+                    );
                 }
                 else {
                     logger.error("The getElevationAlongPath request for path:", pathWithDistance,
                             "failed with status:", status, "and results:", results);
 
-                    // I am just going to assume the points on the path are equidistant
-                    const legDistance = pathWithDistance.distance /
-                            (pathWithDistance.path.length - 1);
-                    pathElevations = _.map(
+                    pathElevations = mapToPointsWithDistance(
                         pathWithDistance.path,
-                        (point, index) => _.extend(
-                            {
-                                ele: 0,
-                                dist: baseDistance + Math.round(legDistance * index)
-                            },
-                            point
-                        )
+                        pathWithDistance.distance,
+                        baseDistance
                     );
                 }
 
@@ -192,6 +232,7 @@ module.exports.fetchAlongPath = function (pathWithDistanceLists, pointsHash) {
         );
 
         promise.then(function (elevations) {
+            logger.debug("Successfully fetched along paths");
             dispatchSuccessNotifications(dispatch);
             dispatch(routePlannerAction.updateElevations(pointsHash, elevations));
         }).catch(function (reason) {
@@ -206,42 +247,31 @@ module.exports.fetchAlongPath = function (pathWithDistanceLists, pointsHash) {
 
 
 /**
- * @desc Return the a list of Google points, corresponding to the requested sublist.
- * @param {point[]} points - the point list
- * @param {number} lowerBound - the index of the first point (inclusive) in the sublist
- * @param {number} upperBound - the index of the last point (exclusive) in the sublist
- * @return {point[]} - the sublist
+ * @desc Map the given points to a list of points with elevation data, extracted from
+ *     the given elevation query results.
+ *     It is considered to be a 1-to-1 mapping between the points and the results.
+ * @param {point[]} points - the points to map
+ * @param {google.maps.ElevationResult[]} results - the elevation query results for the given points
+ * @return {point[]} - a list of points with elevation coordinate
  */
-const googlePointSubList = function (points, lowerBound, upperBound) {
-    return _.map(
-        _.filter(points, (point, index) => {
-            return index >= lowerBound && index < upperBound;
-        }),
-        point => conversions.convertSimpleCoordinateToGoogle(point)
-    );
-};
+const mapToPointsWithElevation = function (points, results) {
+    const roundFactor = Math.pow(10, 5);
 
-/**
- * @desc Update the 'ele' attribute on the points in the given list with the elevation
- *    attribute on the corresponding point in the results list.
- * @param {point[]} elevations - the points to update
- * @param {number} lowerBound - the index of the results list in the points list
- * @param {ElevationResult[]} results - the elevation query results
- */
-const hydrateElevationCoordinate = function (points, lowerBound, results) {
-    _.each(results, (result, index) => {
-        const point = points[lowerBound + index];
+    return _.map(points, (point, index) => {
+        const result = results[index];
 
         // compare the latitude and longitude of the current result and point;
         // they should match to the (and including) 5th decimal
+        // (that's the rough equivalent of 1.1 meters).
         const resultLat = result.location.lat();
         const resultLng = result.location.lng();
 
-        if (Math.round(resultLat * 10000) !== Math.round(point.lat * 10000) ||
-               Math.round(resultLng * 10000) !== Math.round(point.lng * 10000)) {
+        let elevation;
+        if (Math.round(resultLat * roundFactor) !== Math.round(point.lat * roundFactor) ||
+               Math.round(resultLng * roundFactor) !== Math.round(point.lng * roundFactor)) {
             logger.warn(
                     `Coordinates don't match for point at index ${
-                        lowerBound + index
+                        index
                     } and the corresponding result; point={${
                         point.lat
                     }, ${
@@ -251,94 +281,116 @@ const hydrateElevationCoordinate = function (points, lowerBound, results) {
                     }, ${
                         resultLng
                     }}`);
-            point.ele = null;
+            elevation = null;
         }
         else {
-            point.ele = result.elevation.toFixed(2);
+            elevation = result.elevation.toFixed(2);
         }
+
+        return _.extend({ ele: elevation }, point);
     });
 };
 
 /**
- * @desc Fetch the elevation coordinates for the next batch of points.
- *    The Elevation APIs limitations are:
- *    - 2,500 free requests per day
- *    - 512 locations per request
- *    - 50 requests per second
- * @param {function} dispatch - the dispatch function
- * @param {point[]} elevations - the list of points being updated with elevation coordinates;
- *    the update is done is place.
- * @param {number} lowerBound - the lower bound of the batch to be updated
- * @param {function} resolve - the promise resolve function
- * @param {function} reject - the promise reject function
+ * @desc Build a chainable promise which fetched the elevation coordinate for all points
+ *     on the given path.
+ * @param {google.maps.ElevationService} elevationSvc - the elevation service
+ * @param {point[]} points - the points to fetch elevations for
+ * @param {function} onStart - function to call with the index of the current partition
+ *     being processed when the promise starts executing
+ * @return {function} - a function which returns a promise
  */
-const fetchForLocationsSublist = function (dispatch, elevations, lowerBound, resolve, reject) {
-    logger.debug("Fetching elevations for locations sublist at index:", lowerBound);
+const buildFetchForLocationsPromise = function (elevationSvc, points, onStart) {
+    return function (elevations) {
+        return new Promise(function (resolve, reject) {
+            onStart();
 
-    if (lowerBound === elevations.length) {
-        logger.debug("Finished fetching elevations");
+            logger.trace("Sending getElevationForLocations request for locations:", points);
+            
+            elevationSvc.getElevationForLocations({
+                locations: _.map(
+                    points,
+                    point => conversions.convertAndRoundSimpleCoordinateToGoogle(point)
+                )
+            }, function (results, status) {
+                logger.trace(
+                        "Received getElevationForLocations response",
+                        "; status:", status,
+                        "; results:", results);
 
-        // we have exhausted the points list
-        resolve(elevations);
-        return;
-    }
+                if (status === google.maps.ElevationStatus.OK) {
+                    const pathElevations = mapToPointsWithElevation(points, results);
+                    const newElevations = [...elevations, ...pathElevations];
+          
+                    logger.trace("Finished processing locations:", points,
+                            "; elevations:", newElevations);
+            
+                    setTimeout(() => resolve(newElevations), 1000);
+                }
+                else {
+                    logger.error(
+                            "The getElevationForLocations request for locations:", points,
+                            "failed with status:", status, "and results:", results
+                    );
 
-    const batchSize = 100;
-    const elevator = new google.maps.ElevationService();
-
-    dispatchFetchForLocationsProgressNotifications(dispatch, lowerBound, elevations.length);
-
-    const upperBound = Math.min(lowerBound + batchSize, elevations.length);
-
-    // this is a list of Google LatLng points
-    const batch = googlePointSubList(elevations, lowerBound, upperBound);
-
-    logger.debug(`Fetching elevations for batch ${lowerBound}..${upperBound}`);
-
-    elevator.getElevationForLocations({ locations: batch }, function (results, status) {
-        logger.debug(`Received status '${status}' when fetching elevations for batch`);
-
-        if (status === google.maps.ElevationStatus.OK) {
-            hydrateElevationCoordinate(elevations, lowerBound, results);
-
-            setTimeout(
-                _.partial(
-                    fetchForLocationsSublist,
-                    dispatch,
-                    elevations,
-                    upperBound,
-                    resolve,
-                    reject
-                ),
-                1000
-            );
-        }
-        else {
-            reject(status);
-        }
-    });
+                    reject(status);
+                }
+            });
+        });
+    };
 };
 
 /**
  * @desc Fetch the elevation coordinates for the given points.
- * @param {function} dispatch - the dispatch function
  * @param {point[]} points - the points
  * @return {function} - an action
  */
-module.exports.fetchForLocations = function (dispatch, points) {
-    const elevations = _.map(points, point => routeBuilders.clonePoint(point));
-    logger.debug("Fetching elevations for locations; size:", elevations.length);
+module.exports.fetchForLocations = function (points) {
+    logger.debug("Fetching for locations:", points);
+
+    const partitionSize = 100;
+    const partitionCount = Math.ceil(points.length / partitionSize);
 
     return function (dispatch) {
-        new Promise(
-            _.partial(fetchForLocationsSublist, dispatch, elevations, 0)
-        ).then(function (elevations) {
+        const elevationSvc = new google.maps.ElevationService();
+        let promise = Promise.resolve([]);
+
+        _.each(
+            _.chain(points)
+                .groupBy(function (point, index) {
+                    return Math.floor(index / partitionSize);
+                })
+                .toArray()
+                .value(),
+            (partition, index) => {
+                logger.trace("Creating promise for partition:", partition);
+
+                promise = promise.then(
+                    buildFetchForLocationsPromise(
+                        elevationSvc,
+                        partition,
+                        _.partial(
+                            dispatchFetchForLocationsProgressNotifications,
+                            dispatch,
+                            index,
+                            partitionCount
+                        )
+                    )
+                );
+                logger.trace("Finished creating promise for partition:", partition);
+            }
+        );
+
+        promise.then(function (elevations) {
             logger.debug("Successfully fetched elevations for locations");
             dispatchSuccessNotifications(dispatch);
             dispatch(routePlannerAction.fetchForLocationsComplete(elevations));
-        }).catch(function (status) {
-            logger.debug("Error while fetching elevations for locations");
-            dispatchErrorNotifications(dispatch, status);
+        }).catch(function (reason) {
+            logger.error(
+                "Could not fetch elevations for locations:", points,
+                "; reason:", reason
+            );
+            dispatchErrorNotifications(dispatch);
             dispatch(routePlannerAction.fetchForLocationsComplete(null));
         });
     };

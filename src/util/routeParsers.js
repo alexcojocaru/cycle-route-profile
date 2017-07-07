@@ -111,17 +111,18 @@ module.exports.areRoutesSame = areRoutesSame;
 
 /**
  * @desc Flatten the given points lists. The resulting array will not
- *    contain the first point on each subsequent list (for it's considered to be
+ *    contain the first point on each subsequent list (for it is considered to be
  *    a duplicate of the last point on the previous list).
- * @param {point[][]} pointLists - the points lists to flatten
+ * @param {point[]} pointLists - the list of points lists
+ *     (each entry in the pointLists is an array of points) to flatten
  * @return {point[]} - a flat array of points
  */
 module.exports.concatenatePointsLists = function (pointLists) {
-     return _.flatten(
+    return _.flatten(
         _.map(pointLists, (pointList, index) => {
             // the first point on each subsequent list is a duplicate
             // of the last point on the previous list
             return _.rest(pointList, index > 0 ? 1 : 0);
-         })
+        })
      );
 };

@@ -172,12 +172,12 @@ module.exports.newPath = function (map) {
  * Update the given path with the points on the given route, and make it visible.
  * The given route is considered to have a single leg.
  * @param {google.maps.Polyline} path - the path to update
- * @param {google.maps.DirectionsRoute} routes - the route with points to set on the path
+ * @param {google.maps.DirectionsRoute} route - the route with points to set on the path
  */
 module.exports.updatePath = function (path, route) {
     const routePoints = [];
     _.each(route.legs[0].steps, step => {
-        _.each(step.lat_lngs, lat_lng => routePoints.push(lat_lng));
+        _.each(step.lat_lngs, lat_lng => routePoints.push(lat_lng)); // eslint-disable-line camelcase
     });
     path.setPath(routePoints);
     path.setVisible(true);

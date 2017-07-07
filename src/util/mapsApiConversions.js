@@ -38,13 +38,13 @@ module.exports.convertGoogleCoordinateToScreen = convertGoogleCoordinateToScreen
  * @param {google.maps.Point} point - the screen coordinate
  * @return {google.maps.LatLng} - the Google LatLng coordinate
  */
-const convertScreenCoordinateToGoogle = function (map, point) { 
+const convertScreenCoordinateToGoogle = function (map, point) {
     const topRight = map.getProjection().fromLatLngToPoint(map.getBounds().getNorthEast());
     const bottomLeft = map.getProjection().fromLatLngToPoint(map.getBounds().getSouthWest());
     const scale = Math.pow(2, map.getZoom());
     const worldPoint = new google.maps.Point(
-        point.x / scale + bottomLeft.x,
-        point.y / scale + topRight.y);
+        (point.x / scale) + bottomLeft.x,
+        (point.y / scale) + topRight.y);
     return map.getProjection().fromPointToLatLng(worldPoint);
 };
 module.exports.convertScreenCoordinateToGoogle = convertScreenCoordinateToGoogle;
@@ -54,6 +54,7 @@ module.exports.convertScreenCoordinateToGoogle = convertScreenCoordinateToGoogle
  *    what's the equivalent in degrees of a pixel on the scren.
  *    The Google Maps API must be loaded for this function to work.
  * @param {google.maps.Map} map - the Google Map object
+ * @return {number} - the degree equivalent for the given pixel coordinate
  */
 module.exports.convertPixelToDegrees = function (map) {
     const projection = map.getProjection();
@@ -62,11 +63,11 @@ module.exports.convertPixelToDegrees = function (map) {
     const scale = Math.pow(2, map.getZoom());
 
     const worldPoint1 = new google.maps.Point(
-        100 / scale + bottomLeft.x,
-        100 / scale + topRight.y);
+        (100 / scale) + bottomLeft.x,
+        (100 / scale) + topRight.y);
     const worldPoint2 = new google.maps.Point(
-        101 / scale + bottomLeft.x,
-        100 / scale + topRight.y);
+        (101 / scale) + bottomLeft.x,
+        (100 / scale) + topRight.y);
 
     return Math.abs(
             projection.fromPointToLatLng(worldPoint1).lng() -
@@ -311,10 +312,10 @@ module.exports.convertSimplifyPointsListToPointsList = function (pointsList) {
  * @param {google.maps.DirectionsRoute[]} routesDirections - the route directions
  * @return {point[]} - the concatenated list of simple points
  */
-module.exports.getCompletePointsLists = function(routesDirections) {
+module.exports.getCompletePointsLists = function (routesDirections) {
     return _.map(
         routesDirections,
-        rd => calculator.getCompletePointsList(rd.renderer.getDirections().routes[0])
+        rd => calculators.getCompletePointsList(rd.renderer.getDirections().routes[0])
     );
 };
 
@@ -329,7 +330,7 @@ module.exports.getCompletePointsLists = function(routesDirections) {
  * @param {google.maps.DirectionsRoute[]} routesDirections - the route directions
  * @return {pathWithDistance[]} - the list of paths with distances
  */
-module.exports.getPathWithDistanceLists = function(routesDirections) {
+module.exports.getPathWithDistanceLists = function (routesDirections) {
     return _.map(
         routesDirections,
         rd => {
@@ -339,5 +340,25 @@ module.exports.getPathWithDistanceLists = function(routesDirections) {
                 distance: calculators.totalDistance(route)
             };
         }
+    );
+};
+
+/**
+ * @desc Convert the given simple coordinate to a Google coordinate
+ *     and round its lat and lng to 5 decimals in the process
+ *     (that's the rough equivalent of 1.1 meters).
+ *     This is to be used for building long URLs (eg. getElevationAlongPath)
+ *     where there is a limit on the URL length.
+ *     The Google Maps API must be loaded for this function to work.
+ * @param {object} coordinate - the simple coordinate in {lat, lng} format
+ * @return {google.maps.LatLng} - the rounded Google coordinate
+ */
+module.exports.convertAndRoundSimpleCoordinateToGoogle = function (coordinate) {
+    const numberOfDecimals = 5;
+
+    const factor = Math.pow(10, numberOfDecimals);
+    return new google.maps.LatLng(
+        Math.round(coordinate.lat * factor) / factor,
+        Math.round(coordinate.lng * factor) / factor,
     );
 };

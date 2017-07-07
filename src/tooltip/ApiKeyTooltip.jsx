@@ -36,8 +36,8 @@ var ApiKeyTooltip = React.createClass({
                             Google Maps APIs
                         </a> to display the map, to build the route and to get the elevation data.
                         Since a free account can make a limited number
-                        of API requests, I cannot configure this application to use a global account,
-                        and hence you need to configure it with your own account.
+                        of API requests, I cannot configure this application to use a global
+                        account, and hence you need to configure it with your own account.
                         <br />
                         <br />
                         To get a free Google Maps API key, follow these steps:
@@ -52,7 +52,8 @@ var ApiKeyTooltip = React.createClass({
                                 (which will ask you to sign in if you are not).
                             </li>
                             <li>
-                                Create a new project (name it anyway you want) and enable the API on it.
+                                Create a new project (name it anyway you want)
+                                and enable the API on it.
                             </li>
                         </ol>
                         Once the API key has been generated, copy and paste it

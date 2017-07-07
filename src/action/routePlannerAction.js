@@ -6,7 +6,6 @@ const FileSaver = require("file-saver");
 const elevationAction = require("./elevationAction");
 
 const formatters = require("../util/routeFormatters");
-const parsers = require("../util/routeParsers");
 
 
 const Types = keyMirror({
@@ -141,7 +140,7 @@ module.exports.updateElevations = function (pointsHash, elevations) {
 module.exports.exportGpx = function (points) {
     return function (dispatch) {
         dispatch(disableControls(true));
-        dispatch(elevationAction.fetchForLocations(dispatch, points));
+        dispatch(elevationAction.fetchForLocations(points));
     };
 };
 

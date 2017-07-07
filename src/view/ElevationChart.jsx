@@ -80,7 +80,7 @@ const ElevationChart = React.createClass({
         const y = 3; // always at the top
         const x = tooltip.caretX < chartWidth / 2 ? chartWidth - tooltip.width - 3 : 3;
 
-        return {x: x, y: y};
+        return { x: x, y: y };
     },
 
     _getXTickLabel: function (distance, index, distances) {
@@ -94,8 +94,8 @@ const ElevationChart = React.createClass({
             // if this is the second last item,
             // and the distance between this and the last item is less than 1/4 of step size,
             // hide it
-            return distance === _.last(_.initial(distances))
-                    && (_.last(distances) - distance) <= stepSize / 4
+            return distance === _.last(_.initial(distances)) &&
+                    (_.last(distances) - distance) <= stepSize / 4
                 ? ""
                 : label;
         }
@@ -108,9 +108,9 @@ const ElevationChart = React.createClass({
     },
 
     shouldComponentUpdate: function (nextProps) {
-        return nextProps.controlsDisabled === false
-                && (this.props.elevations.length !== nextProps.elevations.length
-                    || hashFull(this.props.elevations) !== hashFull(nextProps.elevations));
+        return nextProps.controlsDisabled === false &&
+                (this.props.elevations.length !== nextProps.elevations.length ||
+                    hashFull(this.props.elevations) !== hashFull(nextProps.elevations));
     },
 
     render: function () {
@@ -144,16 +144,16 @@ const ElevationChart = React.createClass({
                 data: elevations,
 
                 lineTension: 0,
-                borderCapStyle: 'butt',
-                borderColor: '#777',
+                borderCapStyle: "butt",
+                borderColor: "#777",
                 borderDash: [],
                 borderDashOffset: 0.0,
-                borderJoinStyle: 'miter',
+                borderJoinStyle: "miter",
                 borderWidth: 1,
-                pointBackgroundColor: '#777',
+                pointBackgroundColor: "#777",
                 pointHoverRadius: 5,
-                pointHoverBackgroundColor: 'rgba(220,220,220,1)',
-                pointHoverBorderColor: '#777',
+                pointHoverBackgroundColor: "rgba(220,220,220,1)",
+                pointHoverBorderColor: "#777",
                 pointHoverBorderWidth: 1,
                 pointRadius: 0,
                 pointHitRadius: 10
@@ -200,7 +200,7 @@ const ElevationChart = React.createClass({
                         return;
                     }
 
-                    const {x, y} = self._getNewTooltipPosition(tooltip);
+                    const { x, y } = self._getNewTooltipPosition(tooltip);
                     tooltip.x = x;
                     tooltip.y = y;
                 },
@@ -223,7 +223,7 @@ const ElevationChart = React.createClass({
                         stepSize: xAxesStepSize,
                         callback: (distance, index, distances) =>
                                 self._getXTickLabel(distance, index, distances)
-                    },
+                    }
                     // No need for the override below; setting the ticks.max has the same effect
                     /*
                     afterBuildTicks: scale => {
@@ -249,7 +249,7 @@ const ElevationChart = React.createClass({
             }
         };
         return (
-            <Line ref={ chart => { this.chart = chart; window.chart = chart } }
+            <Line ref={ chart => { this.chart = chart; window.chart = chart; } }
                     data={lineData}
                     options={options}
                     redraw={true} />

@@ -23,8 +23,8 @@ const logger = require("./logger").logger("ElevationParsers");
  * @return {chartPoint[]} - the elevation data
  */
 module.exports.buildElevationData = function (points) {
-    const elevationData = _.map(points, (point, index) => {
-        return { x: point.dist, y: point.ele }
+    const elevationData = _.map(points, point => {
+        return { x: point.dist, y: point.ele };
     });
 
     logger.trace("elevations to plot:", elevationData);
@@ -66,19 +66,19 @@ module.exports.buildGradesList = function (points) {
 module.exports.buildBackgroundColorList = function (grades) {
     const gradeColors = {
         // 9% and above grade
-        a9: '#ff0000',
+        a9: "#ff0000",
         // 6% and above grade
-        a6: '#ffc000',
+        a6: "#ffc000",
         // 3% and above grade
-        a3: '#fff000',
+        a3: "#fff000",
         // flat-ish
-        a0: '#00ff00',
+        a0: "#00ff00",
         // -3% and above grade
-        am3: '#00ffd8',
+        am3: "#00ffd8",
         // -6% and above grade
-        am6: '#00ccff',
+        am6: "#00ccff",
         // below -6% grade
-        am: '#0000ff'
+        am: "#0000ff"
     };
 
     const backgroundColors = _.map(_.rest(grades), grade => {
@@ -140,7 +140,7 @@ module.exports.calculateDistanceStepSize = function (distance, minTicks) {
     let stepSize;
     
     // the last one is used implicitly if none of the previous ones match
-    for (let stepSizeIndex = 0; stepSizeIndex < availableStepSize.length; stepSizeIndex++) {
+    for (let stepSizeIndex = 0; stepSizeIndex < availableStepSize.length; stepSizeIndex += 1) {
         stepSize = availableStepSize[stepSizeIndex];
         if (distance / stepSize > minTicks) {
             break;
@@ -152,7 +152,7 @@ module.exports.calculateDistanceStepSize = function (distance, minTicks) {
             "and min ticks", minTicks);
 
     return stepSize;
-}
+};
 
 /**
  * @desc Convert the distance to kilometers and format it with a single decimal.
