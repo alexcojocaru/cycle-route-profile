@@ -4,7 +4,6 @@
 const keyMirror = require("fbjs/lib/keyMirror");
 const _ = require("underscore");
 
-const hash = require("../util/hash");
 const FetchStatus = require("../constant/elevationConstant").FetchStatus;
 const notificationAction = require("./notificationAction");
 const NotificationLevel = require("../constant/notificationConstant").Level;
@@ -13,6 +12,12 @@ const logger = require("../util/logger").logger("ElevationAction");
 const conversions = require("../util/mapsApiConversions");
 const routeBuilders = require("../util/routeBuilders");
 
+/*
+ * The Elevation APIs limitations are:
+ * - 2,500 free requests per day
+ * - 512 locations per request
+ * - 50 requests per second
+ */
 
 const Types = keyMirror({
     UPDATE_STATUS: null
@@ -83,60 +88,118 @@ const dispatchErrorNotifications = function (dispatch, errorMessage) {
     // discard the sticky notification
     dispatch(notificationAction.dismissNotification("FETCH_ELEVATIONS"));
 
+    const message = errorMessage
+            ? `The Google elevation API returned an error while requesting elevation coordinates.
+Error message: ${errorMessage}`
+            : "There was an error while requesting elevation coodrinates. See the log for details";
+
     dispatch(notificationAction.addNotification(
         NotificationLevel.ERROR,
         "Fetching elevation coordinates",
-        `The Google elevation API returned error while requesting elevation coordinates.
-Error message: ${errorMessage}`));
+        message));
 
     dispatch(updateStatus(FetchStatus.ERROR, errorMessage));
 };
 
+const buildFetchAlongPathPromise = function (elevationSvc, pathWithDistance) {
+    return function (elevations) {
+        return new Promise(function (resolve, reject) {
+            logger.trace("Sending getElevationAlongPath request for path:", pathWithDistance);
+
+            elevationSvc.getElevationAlongPath({
+                path: _.map(
+                    pathWithDistance.path,
+                    point => new google.maps.LatLng(point.lat, point.lng)
+                ),
+                samples: 512
+            }, function (results, status) {
+                logger.trace(
+                        "Received getElevationAlongPath response",
+                        "; status:", status,
+                        "; results:", results);
+
+                const baseDistance = _.isEmpty(elevations) ? 0 : _.last(elevations).dist;
+
+                let pathElevations;
+                if (status === google.maps.ElevationStatus.OK) {
+                    const legDistance = pathWithDistance.distance / (results.length - 1);
+                    pathElevations = _.map(results, (result, index) => {
+                        return {
+                            lat: result.location.lat(),
+                            lng: result.location.lng(),
+                            ele: Math.round(result.elevation * 100) / 100,
+                            dist: baseDistance + Math.round(legDistance * index)
+                        };
+                    });
+                }
+                else {
+                    logger.error("The getElevationAlongPath request for path:", pathWithDistance,
+                            "failed with status:", status, "and results:", results);
+
+                    // I am just going to assume the points on the path are equidistant
+                    const legDistance = pathWithDistance.distance /
+                            (pathWithDistance.path.length - 1);
+                    pathElevations = _.map(
+                        pathWithDistance.path,
+                        (point, index) => _.extend(
+                            {
+                                ele: 0,
+                                dist: baseDistance + Math.round(legDistance * index)
+                            },
+                            point
+                        )
+                    );
+                }
+
+                const newElevations = [...elevations, ...pathElevations];
+      
+                logger.trace("Finished processing path:", pathWithDistance,
+                        "; elevations:", newElevations);
+        
+                setTimeout(() => resolve(newElevations), 300);
+            });
+        });
+    };
+};
+
 /**
- * @desc fetch the elevation coordinates along the given path.
- * @param {point[]} points - the path points
+ * @desc Fetch the elevation coordinates along the given paths.
+ *     A separate request is made for each path.
+ *     The reason for not concatenating the paths is that
+ *     each path has a variable number of points and a distance, and I need to know the distance
+ *     between the samples, in order to plot the elevation chart correctly.
+ * @param {pathWithDistance[]} pathWithDistanceLists - the list of paths with distances
+ * @param {string} pointsHash - the hash of the given path points
  * @return {function} - an action
  */
-module.exports.fetchAlongPath = function (points) {
-    logger.debug("Fetching elevations");
+module.exports.fetchAlongPath = function (pathWithDistanceLists, pointsHash) {
+    logger.debug("Fetching along paths:", pathWithDistanceLists, "; hash:", pointsHash);
+
     return function (dispatch) {
         dispatchFetchAlongPathProgressNotifications(dispatch);
 
-        /*
-         * The Elevation APIs limitations are:
-         * - 2,500 free requests per day
-         * - 512 locations per request
-         * - 50 requests per second
-         */
-        logger.trace("Sending get-elevations request for points:", points);
-        const elevator = new google.maps.ElevationService();
-        elevator.getElevationAlongPath({
-            path: _.map(points, point => new google.maps.LatLng(point.lat, point.lng)),
-            samples: 512
-        }, function (results, status) {
-            logger.trace("Received get-elevations response; status:", status,
-                         "; results:", results);
+        const elevationSvc = new google.maps.ElevationService();
+        let promise = Promise.resolve([]);
 
-            let elevations = [];
-
-            if (status === google.maps.ElevationStatus.OK) {
-                dispatchSuccessNotifications(dispatch);
-
-                elevations = _.map(results, result => {
-                    return {
-                        lat: result.location.lat(),
-                        lng: result.location.lng(),
-                        ele: Math.round(result.elevation * 100) / 100
-                    };
-                });
+        // chain a promise for each path
+        _.each(
+            pathWithDistanceLists,
+            pathWithDistance => {
+                logger.trace("Creating promise for path:", pathWithDistance);
+                promise = promise.then(buildFetchAlongPathPromise(elevationSvc, pathWithDistance));
+                logger.trace("Finished creating promise for path:", pathWithDistance);
             }
-            else {
-                dispatchErrorNotifications(dispatch, status);
-            }
+        );
 
-            const pointsHash = hash.hashPoints(points);
-
+        promise.then(function (elevations) {
+            dispatchSuccessNotifications(dispatch);
             dispatch(routePlannerAction.updateElevations(pointsHash, elevations));
+        }).catch(function (reason) {
+            logger.error(
+                "Could not fetch elevations along paths:", pathWithDistanceLists,
+                "; reason:", reason
+            );
+            dispatchErrorNotifications(dispatch);
         });
     };
 };

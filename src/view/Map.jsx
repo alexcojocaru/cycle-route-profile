@@ -3,6 +3,7 @@
 
 const React = require("react");
 const _ = require("underscore");
+const hash = require("../util/hash");
 
 const logger = require("../util/logger").logger("Map");
 const TravelModePropValidator = require("../util/routeValidators").TravelModePropValidator;
@@ -60,6 +61,7 @@ const Map = React.createClass({
     pathTolerance: 0, // the tolerance to use for checking if the mouse cursor is over a route
     mapZoomListener: null,
     mapTilesLoadedListener: null,
+
 
     /**
      * @desc Highlight the given point on the map as a route active point.
@@ -321,13 +323,16 @@ const Map = React.createClass({
         if (fetchElevations) {
             logger.debug("Route", routeHash, "has settled down; fetching elevations");
 
-            // TODO user the complete path, to get a more accurate elevation profile;
-            // currently the google API limits the number of points to around 200
-            // (http://stackoverflow.com/q/11420176)
-            // enable the corresponding change in RoutePlannerReducer.js:150
-            // this.props.onFetchElevations(parsers.allCompletePathPoints(this.routes));
-
-            this.props.onFetchElevations(parsers.allPathPoints(this.routes));
+            const pathWithDistanceLists = conversions.getPathWithDistanceLists(this.routesDirections);
+            const pointsHash = hash.hashPoints(
+                _.flatten(
+                    _.map(
+                        pathWithDistanceLists,
+                        pwd => pwd.path
+                    )
+                )
+            );
+            this.props.onFetchElevations(pathWithDistanceLists, pointsHash);
         }
     },
 

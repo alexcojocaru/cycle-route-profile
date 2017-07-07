@@ -264,17 +264,80 @@ module.exports.convertGoogleWaypointList = convertGoogleWaypointList;
 const convertGoogleRoute = function (googleRoute) {
     const distance = calculators.totalDistance(googleRoute);
 
-    const points = calculators.mergeRouteLegs(googleRoute);
+    const points = calculators.getWaypointsList(googleRoute);
     const path = convertGoogleWaypointList(googleRoute.overview_path);
-    const completePath = calculators.mergeRoutePoints(googleRoute);
 
     const route = {
         points: points,
         hash: hashFunction(points),
         distance: distance,
-        path: path,
-        completePath: completePath
+        path: path
     };
     return route;
 };
 module.exports.convertGoogleRoute = convertGoogleRoute;
+
+/**
+ * @desc Convert a list of simple points to a list of points to be used with the simplify-js lib.
+ * @param {point[]} pointsList - the list of simple points
+ * @return {object[]} - a list of points in the { x: longitude, y: latitude } format
+ */
+module.exports.convertPointsListToSimplifyPointsList = function (pointsList) {
+    return _.map(pointsList, p => {
+        return {
+            x: p.lng,
+            y: p.lat
+        };
+    });
+};
+
+/**
+ * @desc Convert a list of points in the simplify-js format to a list of simple points.
+ * @param {object[]} pointsList - the list of simplify-js formatted points
+ *    ({: longitude, y: latitude})
+ * @return {point[]} - a list of simple points
+ */
+module.exports.convertSimplifyPointsListToPointsList = function (pointsList) {
+    return _.map(pointsList, p => {
+        return {
+            lat: p.x,
+            lng: p.y
+        };
+    });
+};
+
+/**
+ * @desc Concatenate the complete points lists on each of the given route directions.
+ * @param {google.maps.DirectionsRoute[]} routesDirections - the route directions
+ * @return {point[]} - the concatenated list of simple points
+ */
+module.exports.getCompletePointsLists = function(routesDirections) {
+    return _.map(
+        routesDirections,
+        rd => calculator.getCompletePointsList(rd.renderer.getDirections().routes[0])
+    );
+};
+
+/**
+ * @typedef {object} pathWithDistance
+ * @property {point[]} path - array of points which define the path
+ * @property {number} distance - the path distance
+ */
+
+/**
+ * @desc Return a list of pathWithDistance objects, corresponding to the given route directions.
+ * @param {google.maps.DirectionsRoute[]} routesDirections - the route directions
+ * @return {pathWithDistance[]} - the list of paths with distances
+ */
+module.exports.getPathWithDistanceLists = function(routesDirections) {
+    return _.map(
+        routesDirections,
+        rd => {
+            const route = rd.renderer.getDirections().routes[0];
+            return {
+                path: calculators.getOverviewPointsList(route),
+                distance: calculators.totalDistance(route)
+            };
+        }
+    );
+};

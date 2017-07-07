@@ -62,7 +62,7 @@ const ElevationChart = React.createClass({
             labels = [
                 `Elevation: ${ele}m`,
                 `Grade: ${grade}%`,
-                `Distance: ${parsers.formatDistance(this.pointDistance * tooltipItem.index)}k`
+                `Distance: ${parsers.formatDistance(point.dist)}k`
             ];
         }
         else {
@@ -124,14 +124,9 @@ const ElevationChart = React.createClass({
             );
         }
 
-        const pointDistance = parsers.pointDistance(
-                this.props.distance,
-                this.props.elevations.length);
-        this.pointDistance = pointDistance;
+        const elevations = parsers.buildElevationData(this.props.elevations);
 
-        const elevations = parsers.buildElevationData(this.props.elevations, pointDistance);
-
-        const grades = parsers.buildGradesList(this.props.elevations, pointDistance);
+        const grades = parsers.buildGradesList(this.props.elevations);
         this.grades = grades;
 
         const minElevation = _.min(_.pluck(this.props.elevations, "ele"));

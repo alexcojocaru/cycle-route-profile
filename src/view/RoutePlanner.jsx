@@ -2,12 +2,14 @@
 
 var React = require("react");
 var PanelGroup = require("react-panelgroup");
+var _ = require("underscore");
 
 const logger = require("../util/logger").logger("RoutePlanner");
 var Map = require("./Map.jsx");
 var ElevationChart = require("./ElevationChart.jsx");
 var EndpointSelectionDialog = require("./EndpointSelectionDialog.jsx");
 var Sidebar = require("./Sidebar.jsx");
+const parsers = require("../util/routeParsers");
 
 var RoutePlanner = React.createClass({
     propTypes: {
@@ -18,6 +20,14 @@ var RoutePlanner = React.createClass({
          */
         routeExists: React.PropTypes.bool,
         onRoutesUpdate: React.PropTypes.func
+    },
+
+    _onExportGpx: function () {
+        this.props.onExportGpx(
+            parsers.concatenatePointLists(
+                this.map._getCompletePointsLists()
+            )
+        );
     },
 
     _onHighlightActiveRoutePoint: function (point) {
@@ -52,7 +62,7 @@ var RoutePlanner = React.createClass({
                             onHighlightActiveChartPoint={this._onHighlightActiveChartPoint} />
                 </PanelGroup>
                 <EndpointSelectionDialog {...this.props} />
-                <Sidebar {...this.props} />
+                <Sidebar { ..._.extend(this.props, { onExportGpx: this._onExportGpx }) } />
             </div>
         );
     }

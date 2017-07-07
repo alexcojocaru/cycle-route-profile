@@ -43,12 +43,12 @@ const findWaypointWithinBounds = function (map, routes, mouseEvent) {
 module.exports.findWaypointWithinBounds = findWaypointWithinBounds;
 
 /**
- * @descr Merge the waypoints on the given route legs into a single list of simple waypoints.
+ * @desc Get the list of waypoints on the given route as a single list of simple waypoints.
  *     The Google Maps API must be loaded for this function to work.
  * @param {google.maps.DirectionsRoute} route - a google route
  * @return {point[]} - a list of simple waypoint objects as {lat, lng}
  */
-const mergeRouteLegs = function (route) {
+module.exports.getWaypointsList = function (route) {
     const waypoints = [];
     _.each(route.legs, leg => {
         // don't add the start if it's equal to the previous finish
@@ -66,15 +66,30 @@ const mergeRouteLegs = function (route) {
 
     return simpleWaypoints;
 };
-module.exports.mergeRouteLegs = mergeRouteLegs;
 
 /**
- * @descr Merge the points on each leg path on the given route.
+ * @desc Get the overview points list on the given route
+ *     as a single list of simple waypoints.
  *     The Google Maps API must be loaded for this function to work.
  * @param {google.maps.DirectionsRoute} route - a google route
  * @return {point[]} - a list of simple point objects as {lat, lng}
  */
-const mergeRoutePoints = function (route) {
+module.exports.getOverviewPointsList = function (route) {
+    const points = route.overview_path;
+
+    // convert from google.maps.LatLng to {lat, lng} objects
+    const simplePoints = conversions.convertGoogleWaypointList(points);
+
+    return simplePoints;
+};
+
+/**
+ * @desc Get the complete points list on the given route as a single list of simple waypoints.
+ *     The Google Maps API must be loaded for this function to work.
+ * @param {google.maps.DirectionsRoute} route - a google route
+ * @return {point[]} - a list of simple point objects as {lat, lng}
+ */
+module.exports.getCompletePointsList = function (route) {
     const points = [];
     _.each(route.legs, leg => {
         _.each(leg.steps, step => {
@@ -93,14 +108,13 @@ const mergeRoutePoints = function (route) {
 
     return simplePoints;
 };
-module.exports.mergeRoutePoints = mergeRoutePoints;
 
 /**
  * @descr Calculate the total distance between all the legs of the given route.
  * @param {google.maps.DirectionsRoute} route - a google route
  * @return {number} - the total distance in meters
  */
-const totalDistance = function (route) {
+module.exports.totalDistance = function (route) {
     const overallDistance = _.reduce(
         route.legs,
         (distance, leg) => {
@@ -111,5 +125,4 @@ const totalDistance = function (route) {
     );
     return overallDistance;
 };
-module.exports.totalDistance = totalDistance;
 

@@ -18,24 +18,13 @@ const logger = require("./logger").logger("ElevationParsers");
  */
 
 /**
- * @desc Calculate the distance between two adjacent points, assuming they are equidistant.
- * @param {number} totalDistance - the total distance
- * @param {number} pointsCount - the number of segments within the given distance
- * @return {number} - the distance between two points
- */
-module.exports.pointDistance = function (totalDistance, pointsCount) {
-    return totalDistance / (pointsCount - 1);
-};
-
-/**
  * @desc Build the elevation data to display on the chart.
- * @param {point[]} points - a list of points with elevation
- * @param {number} pointDistance - the distance between two adjacent points
+ * @param {pathPoint[]} points - a list of points with elevation and distance
  * @return {chartPoint[]} - the elevation data
  */
-module.exports.buildElevationData = function (points, pointDistance) {
+module.exports.buildElevationData = function (points) {
     const elevationData = _.map(points, (point, index) => {
-        return { x: index * pointDistance, y: point.ele }
+        return { x: point.dist, y: point.ele }
     });
 
     logger.trace("elevations to plot:", elevationData);
@@ -45,15 +34,16 @@ module.exports.buildElevationData = function (points, pointDistance) {
 
 /**
  * @desc Build the grade list for the given list of points.
- * @param {point[]} points - a list of points with elevation
- * @param {number} pointDistance - the distance between two adjacent points
+ * @param {pathPoint[]} points - a list of points with elevation and distance
  * @return {number[]} - the grade list
  */
-module.exports.buildGradesList = function (points, pointDistance) {
+module.exports.buildGradesList = function (points) {
     let previous;
     const grades = _.map(points, (point, index) => {
         // first point doesn't have a grade
-        const grade = index === 0 ? 0 : (100 * (point.ele - previous.ele) / pointDistance);
+        const grade = index === 0
+            ? 0
+            : (100 * (point.ele - previous.ele) / (point.dist - previous.dist));
 
         previous = point;
         
@@ -209,7 +199,7 @@ module.exports.findClosestPoint = function (points, point) {
 
 /**
  * @desc Calculate the total elevation gain and elevation loss across the given points list.
- * @param {point[]} points - a list of points with elevation
+ * @param {pathPoint[]} points - a list of points with elevation
  * @return {number[]} - the total elevation gain and loss
  */
 module.exports.totalElevationGainAndLoss = function (points) {

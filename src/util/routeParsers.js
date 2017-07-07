@@ -110,37 +110,18 @@ const areRoutesSame = function (routes, others) {
 module.exports.areRoutesSame = areRoutesSame;
 
 /**
- * @desc Flatten the paths on the given routes. The resulting array will not
- *    contain the first point on each subsequent route (for it's considered to be
- *    a duplicate of the last point on the previous route).
- * @param {route[]} routes - the routes containing the paths arrays to flatten
+ * @desc Flatten the given points lists. The resulting array will not
+ *    contain the first point on each subsequent list (for it's considered to be
+ *    a duplicate of the last point on the previous list).
+ * @param {point[][]} pointLists - the points lists to flatten
  * @return {point[]} - a flat array of points
  */
-const allPathPoints = function (routes) {
-    return _.flatten(
-        _.map(routes, (route, index) => {
-            // the first point on each subsequent route is a duplicate
-            // of the last point on the previous route
-            return _.rest(route.path, index > 0 ? 1 : 0);
-        })
-    );
+module.exports.concatenatePointsLists = function (pointLists) {
+     return _.flatten(
+        _.map(pointLists, (pointList, index) => {
+            // the first point on each subsequent list is a duplicate
+            // of the last point on the previous list
+            return _.rest(pointList, index > 0 ? 1 : 0);
+         })
+     );
 };
-module.exports.allPathPoints = allPathPoints;
-
-/**
- * @desc Flatten the complete paths on the given routes. The resulting array will not
- *    contain the first point on each subsequent route (for it's considered to be
- *    a duplicate of the last point on the previous route).
- * @param {route[]} routes - the routes containing the complete paths arrays to flatten
- * @return {point[]} - a flat array of points
- */
-const allCompletePathPoints = function (routes) {
-    return _.flatten(
-        _.map(routes, (route, index) => {
-            // the first point on each subsequent route is a duplicate
-            // of the last point on the previous route
-            return _.rest(route.completePath, index > 0 ? 1 : 0);
-        })
-    );
-};
-module.exports.allCompletePathPoints = allCompletePathPoints;

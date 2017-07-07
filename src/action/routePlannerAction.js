@@ -109,15 +109,17 @@ module.exports.toggleControls = function () {
 /**
  * @desc Fetch the elevation coordinates for the given points.
  * @param {point[]} points - the points
+ * @param {string} pointsHash - the hash of the given points
  * @return {object} - the action
  */
-module.exports.fetchElevations = function (points) {
+module.exports.fetchElevations = function (points, pointsHash) {
     return function (dispatch) {
         dispatch({
-            type: Types.UPDATING_ELEVATIONS
+            type: Types.UPDATING_ELEVATIONS,
+            pointsHash: pointsHash
         });
 
-        dispatch(elevationAction.fetchAlongPath(points));
+        dispatch(elevationAction.fetchAlongPath(points, pointsHash));
     };
 };
 
@@ -125,7 +127,7 @@ module.exports.fetchElevations = function (points) {
  * @desc Update the elevations coordinates across all routes.
  * @param {string} pointsHash - the hash of the points list used to fetch the elevations coordinates
  *    (NB: those points are not the same - in terms of lat&lng - as in the elevations array)
- * @param {point[]} elevations - the elevations corresponding to the given points
+ * @param {pathPoint[]} elevations - the elevations corresponding to the given points
  * @return {object} - the action
  */
 module.exports.updateElevations = function (pointsHash, elevations) {
@@ -136,8 +138,7 @@ module.exports.updateElevations = function (pointsHash, elevations) {
     };
 };
 
-module.exports.exportGpx = function (routes) {
-    const points = parsers.allCompletePathPoints(routes);
+module.exports.exportGpx = function (points) {
     return function (dispatch) {
         dispatch(disableControls(true));
         dispatch(elevationAction.fetchForLocations(dispatch, points));

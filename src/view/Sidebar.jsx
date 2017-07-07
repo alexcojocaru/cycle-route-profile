@@ -42,10 +42,6 @@ var Sidebar = React.createClass({
         this.props.onTravelModeUpdate(payload);
     },
 
-    _onExportGpx: function () {
-        this.props.onExportGpx(this.props.routes);
-    },
-
     _onToggleRoutePlanner: function () {
         this._onViewUpdate(ViewType.ROUTE_PLANNER);
     },
@@ -112,7 +108,7 @@ var Sidebar = React.createClass({
                     <Box py={2}>
                         <RaisedButton
                                 label="Export GPX"
-                                onClick={this._onExportGpx}
+                                onClick={this.props.onExportGpx}
                                 title="Export the current route as GPX"
                                 disabled={
                                     !this.props.routeExists ||

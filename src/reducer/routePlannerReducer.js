@@ -8,6 +8,14 @@
  */
 
 /**
+ * @typedef {object} pathPoint
+ * @property {number} lat - the latitude
+ * @property {number} lng - the longitude
+ * @property {number} [ele] - the elevation
+ * @property {number} dist - the distance to the start point of the path
+ */
+
+/**
  * @typedef {object} route
  * @property {point[]} points - array of route [way]points
  * @property {string} hash - the route hash
@@ -47,6 +55,10 @@ const initialState = {
     // the following two are just intermediate values, until both are set and the route is valid
     start: null,
     finish: null,
+
+    // the following is just an intermediate value,
+    // to store the hash of the points list last sent to the elevations svc
+    currentElevationPointsHash: null,
 
     // the (lat, lng) geo location of the mouse position when the endpoint selection dialog opened;
     // this is an intermediate value, until it's set as start/finish
@@ -136,20 +148,14 @@ const routePlannerReducer = function (state, action) {
         case ActionTypes.UPDATING_ELEVATIONS:
             nextState.elevationsUpdatesCount = nextState.elevationsUpdatesCount + 1;
             nextState.controlsDisabled = true;
+            nextState.currentElevationPointsHash = action.pointsHash;
             break;
         case ActionTypes.UPDATE_ELEVATIONS:
             nextState.elevationsUpdatesCount = nextState.elevationsUpdatesCount - 1;
             nextState.controlsDisabled = nextState.elevationsUpdatesCount > 0;
 
             // overwrite the elevations only if the new one corresponds to the current points list
-
-            // TODO user the complete path, to get a more accurate elevation profile;
-            // currently the google API limits the number of points to around 200
-            // (http://stackoverflow.com/q/11420176);
-            // enable the corresponding change in Map.jsx:328
-            // if (action.pointsHash === hash.hashPoints(parsers.allCompletePathPoints(nextState.routes))) {
-
-            if (action.pointsHash === hash.hashPoints(parsers.allPathPoints(nextState.routes))) {
+            if (action.pointsHash === nextState.currentElevationPointsHash) {
                 nextState.elevations = action.elevations;
 
                 [nextState.elevationGain, nextState.elevationLoss] = elevationParsers
