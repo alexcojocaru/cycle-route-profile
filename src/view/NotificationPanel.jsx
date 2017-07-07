@@ -1,24 +1,25 @@
 "use strict";
 
-var React = require("react");
-var _ = require("underscore");
-var NotificationSystem = require("react-notification-system");
+const React = require("react");
+const _ = require("underscore");
+const NotificationSystem = require("react-notification-system");
 
 const logger = require("../util/logger").logger("NotificationPanel");
-var Level = require("../constant/notificationConstant").Level;
+const Level = require("../constant/notificationConstant").Level;
 
 
 /**
  * This component never updates.
  * Instead, on receiving a new property, it adds it to the notification system.
  */
-var NotificationPanel = React.createClass({
+const NotificationPanel = React.createClass({
     propTypes: {
         notifications: React.PropTypes.array,
         onDelete: React.PropTypes.func.isRequired
     },
 
-    _notificationSystem: null,
+    notificationSystem: null,
+    permanentNotifications: [],
 
     /**
      * Get the notification level corresonding to the given notification type
@@ -48,11 +49,11 @@ var NotificationPanel = React.createClass({
      * @return {object} - the notification object to be used with the notification module
      */
     _buildNotification: function (notification) {
-        var level = this._getNotificationLevel(notification.level);
+        const level = this._getNotificationLevel(notification.level);
 
         // keep errors until dismissed by user;
         // keep persistent notifications until dismissed by app
-        var isPersistent = (notification.level === Level.ERROR) || notification.persistent;
+        const isPersistent = (notification.level === Level.ERROR) || notification.persistent;
 
         return {
             level: level,
@@ -66,16 +67,47 @@ var NotificationPanel = React.createClass({
     },
 
     componentWillReceiveProps: function (nextProps) {
-        var self = this;
+        logger.debug("New notifications:", nextProps.notifications);
+
+        const self = this;
 
         _.each(nextProps.notifications, function (notification) {
             if (notification.dismiss === true) {
-                self._notificationSystem.removeNotification(notification.id);
+                logger.trace("Removing notification:", notification.id);
+                self.notificationSystem.removeNotification(notification.id);
             }
             else {
-                self._notificationSystem.addNotification(self._buildNotification(notification));
+                const displayableNotification = self._buildNotification(notification);
+                if (_.contains(self.permanentNotifications, notification.id)) {
+                    logger.trace("Editing notification:", notification.id);
+                    self.notificationSystem.editNotification(
+                            notification.id,
+                            displayableNotification);
+                }
+                else {
+                    logger.trace("Adding notification:", notification.id);
+                    self.notificationSystem.addNotification(displayableNotification);
+                }
             }
         });
+
+        // Persistent notifications can be edited.
+        // The notifications API does not have support for querying the list of displayed
+        // notifications, therefore I need to maintain the list myself :-(
+        logger.debug("Persistent notifications to be updated:", self.permanentNotifications);
+        _.each(nextProps.notifications, n => {
+            // keep track of the displayed permanent notifications
+            if (n.persistent) {
+                logger.trace("Adding persistent notification ID:", n.id);
+                self.permanentNotifications.push(n.id);
+            }
+            // remove a permanent notification once it gets dismissed
+            if (n.dismiss) {
+                logger.trace("Removing persistent notification ID:", n.id);
+                self.permanentNotifications = _.without(self.permanentNotifications, n.id);
+            }
+        });
+        logger.debug("Persistent notifications being tracked:", self.permanentNotifications);
 
         const ids = _.pluck(nextProps.notifications, "id");
         if (ids.length) {
@@ -92,7 +124,7 @@ var NotificationPanel = React.createClass({
 
     render: function () {
         return (
-            <NotificationSystem ref={ ns => { this._notificationSystem = ns; }} />
+            <NotificationSystem ref={ ns => { this.notificationSystem = ns; }} />
         );
     }
 });

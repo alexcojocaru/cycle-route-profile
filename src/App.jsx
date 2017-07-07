@@ -1,5 +1,8 @@
 "use strict";
 
+// provides support for promises
+require("babel-polyfill");
+
 // reference the static assets, to be processed/bundled by the webpack plugins
 require("./css/main.css");
 

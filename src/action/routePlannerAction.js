@@ -6,6 +6,7 @@ const FileSaver = require("file-saver");
 const elevationAction = require("./elevationAction");
 
 const formatters = require("../util/routeFormatters");
+const parsers = require("../util/routeParsers");
 
 
 const Types = keyMirror({
@@ -91,6 +92,14 @@ module.exports.closeEndpointSelectionDialog = function () {
     };
 };
 
+const disableControls = function (disabled) {
+    return {
+        type: Types.DISABLE_CONTROLS,
+        controlsDisabled: disabled
+    };
+};
+module.exports.disableControls = disableControls;
+
 module.exports.toggleControls = function () {
     return {
         type: Types.TOGGLE_CONTROLS
@@ -108,7 +117,7 @@ module.exports.fetchElevations = function (points) {
             type: Types.UPDATING_ELEVATIONS
         });
 
-        dispatch(elevationAction.fetch(points));
+        dispatch(elevationAction.fetchAlongPath(points));
     };
 };
 
@@ -128,6 +137,20 @@ module.exports.updateElevations = function (pointsHash, elevations) {
 };
 
 module.exports.exportGpx = function (routes) {
-    const content = formatters.routesToGpx(routes);
-    FileSaver.saveAs(content, "route.gpx");
+    const points = parsers.allCompletePathPoints(routes);
+    return function (dispatch) {
+        dispatch(disableControls(true));
+        dispatch(elevationAction.fetchForLocations(dispatch, points));
+    };
+};
+
+module.exports.fetchForLocationsComplete = function (points) {
+    return function (dispatch) {
+        dispatch(disableControls(false));
+
+        if (points) {
+            const content = formatters.pointListToGpx(points);
+            FileSaver.saveAs(content, "route.gpx");
+        }
+    };
 };

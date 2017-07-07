@@ -265,17 +265,15 @@ const convertGoogleRoute = function (googleRoute) {
     const distance = calculators.totalDistance(googleRoute);
 
     const points = calculators.mergeRouteLegs(googleRoute);
-
-    // TODO alex - toggle the 2 lines below if I want the complete path instead of the simplied one
-    //    (caveat: the point list could get very very long)
-    // const path = calculators.mergeRoutePoints(googleRoute);
     const path = convertGoogleWaypointList(googleRoute.overview_path);
+    const completePath = calculators.mergeRoutePoints(googleRoute);
 
     const route = {
         points: points,
         hash: hashFunction(points),
         distance: distance,
-        path: path
+        path: path,
+        completePath: completePath
     };
     return route;
 };

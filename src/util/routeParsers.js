@@ -126,3 +126,21 @@ const allPathPoints = function (routes) {
     );
 };
 module.exports.allPathPoints = allPathPoints;
+
+/**
+ * @desc Flatten the complete paths on the given routes. The resulting array will not
+ *    contain the first point on each subsequent route (for it's considered to be
+ *    a duplicate of the last point on the previous route).
+ * @param {route[]} routes - the routes containing the complete paths arrays to flatten
+ * @return {point[]} - a flat array of points
+ */
+const allCompletePathPoints = function (routes) {
+    return _.flatten(
+        _.map(routes, (route, index) => {
+            // the first point on each subsequent route is a duplicate
+            // of the last point on the previous route
+            return _.rest(route.completePath, index > 0 ? 1 : 0);
+        })
+    );
+};
+module.exports.allCompletePathPoints = allCompletePathPoints;

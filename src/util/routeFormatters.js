@@ -25,11 +25,11 @@ const formatDistance = function (distance) {
 module.exports.formatDistance = formatDistance;
 
 /**
- * @desc Format the given routes as a Blob with GPX content.
- * @param {route[]} routes - the routes to format
+ * @desc Format the given points list as a Blob with GPX content.
+ * @param {point[]} points - the points list to format
  * @return {Blob} - the GPX content as Blog
  */
-const routesToGpx = function (routes) {
+const pointListToGpx = function (points) {
     const content = new Array();
     content.push(
 `<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">
@@ -41,32 +41,31 @@ const routesToGpx = function (routes) {
 </metadata>`
     );
 
-    _.each(routes, function (route, index) {
-        content.push(
+    const date = new Date().toISOString();
+    const datetime = `${date.slice(0, 10)} ${date.slice(11, 19)}`; // 2017-05-13 12:12:59
+    content.push(
 `
 <trk>
   <trkseg> 
-    <name>Track ${index}</name>`
-        );
+    <name>Track ${datetime}</name>`
+    );
 
-        _.each(route.points, point => {
-            content.push(
+    _.each(points, point => {
+        content.push(
 `
     <trkpt lat="${point.lat}" lon="${point.lng}"`
-            );
-            // the elevations are not stored on the points in "points" attribute of the route
-            // if (_.has(point, "ele") && point.ele !== null) {
-            //     content.push(` ele="${point.ele}"`);
-            // }
-            content.push(" />");
-        });
+        );
+        if (_.has(point, "ele") && point.ele !== null) {
+            content.push(` ele="${point.ele}"`);
+        }
+        content.push(" />");
+    });
 
-        content.push(
+    content.push(
 `
   </trkseg>
 </trk>`
-        );
-    });
+    );
 
     content.push(
 `
@@ -81,4 +80,4 @@ const routesToGpx = function (routes) {
     );
     return blob;
 };
-module.exports.routesToGpx = routesToGpx;
+module.exports.pointListToGpx = pointListToGpx;

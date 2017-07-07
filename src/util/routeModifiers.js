@@ -25,6 +25,7 @@ const collapseCurrentRouteToNext = function (routes, index) {
 
     nextRoute.hash = hashFunction(nextRoute.points);
     nextRoute.path = [];
+    nextRoute.completePath = [];
 };
 
 /**
@@ -44,6 +45,7 @@ const collapseNextRouteToCurrent = function (routes, index) {
 
     route.hash = hashFunction(route.points);
     route.path = [];
+    route.completePath = [];
 };
 
 /**
@@ -109,9 +111,11 @@ const deleteWaypoint = function (routes, waypoint) {
                 nextRoute.points.splice(0, 0, _.last(route.points));
                 nextRoute.hash = hashFunction(nextRoute.points);
                 nextRoute.path = [];
+                nextRoute.completePath = [];
             }
             route.hash = hashFunction(route.points);
             route.path = [];
+            route.completePath = [];
         }
     }
 
@@ -169,6 +173,7 @@ const resetStart = function (route, point) {
     route.points[0] = builders.clonePoint(point);
     route.hash = hashFunction(route.points);
     route.path = [];
+    route.completePath = [];
 };
 
 /**
@@ -181,6 +186,7 @@ const resetFinish = function (route, point) {
     route.points[route.points.length - 1] = builders.clonePoint(point);
     route.hash = hashFunction(route.points);
     route.path = [];
+    route.completePath = [];
 };
 
 /**
