@@ -308,14 +308,26 @@ module.exports.convertSimplifyPointsListToPointsList = function (pointsList) {
 };
 
 /**
- * @desc Concatenate the complete points lists on each of the given route directions.
+ * @desc Build and return the complete points list for each of the given route directions.
  * @param {google.maps.DirectionsRoute[]} routesDirections - the route directions
- * @return {point[]} - the concatenated list of simple points
+ * @return {point[]} - the list of of simple points lists
  */
 module.exports.getCompletePointsLists = function (routesDirections) {
     return _.map(
         routesDirections,
         rd => calculators.getCompletePointsList(rd.renderer.getDirections().routes[0])
+    );
+};
+
+/**
+ * @desc Build and return the instructions list for each of the given route directions.
+ * @param {google.maps.DirectionsRoute[]} routesDirections - the route directions
+ * @return {routeInstruction[]} - the list of route instructions lists
+ */
+module.exports.getRouteInstructionsLists = function (routesDirections) {
+    return _.map(
+        routesDirections,
+        rd => calculators.getRouteInstructionsList(rd.renderer.getDirections().routes[0])
     );
 };
 

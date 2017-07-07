@@ -30,6 +30,14 @@ var RoutePlanner = React.createClass({
         );
     },
 
+    _onExportRouteSheet: function () {
+        this.props.onExportRouteSheet(
+            parsers.concatenateRouteInstructionsLists(
+                this.map._getRouteInstructionsLists()
+            )
+        );
+    },
+
     _onHighlightActiveRoutePoint: function (point) {
         this.chart._onHighlightActivePoint(point);
     },
@@ -62,7 +70,10 @@ var RoutePlanner = React.createClass({
                             onHighlightActiveChartPoint={this._onHighlightActiveChartPoint} />
                 </PanelGroup>
                 <EndpointSelectionDialog {...this.props} />
-                <Sidebar {...this.props} onSidebarExportGpx={this._onExportGpx} />
+                <Sidebar {...this.props}
+                        onSidebarExportGpx={this._onExportGpx}
+                        onSidebarExportRouteSheet={this._onExportRouteSheet}
+                />
             </div>
         );
     }

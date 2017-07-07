@@ -110,6 +110,28 @@ module.exports.getCompletePointsList = function (route) {
 };
 
 /**
+ * @desc Get the instructions list on the given route.
+ *     The Google Maps API must be loaded for this function to work.
+ * @param {google.maps.DirectionsRoute} route - a google route
+ * @return {routeInstruction[]} - a list of route instructions
+ */
+module.exports.getRouteInstructionsList = function (route) {
+    const instructions = [];
+    _.each(route.legs, leg => {
+        _.each(leg.steps, step => {
+            if (_.isEmpty(step.instructions) === false) {
+                instructions.push({
+                    instructions: step.instructions,
+                    distance: step.distance ? step.distance.value : -1
+                });
+            }
+        });
+    });
+
+    return instructions;
+};
+
+/**
  * @descr Calculate the total distance between all the legs of the given route.
  * @param {google.maps.DirectionsRoute} route - a google route
  * @return {number} - the total distance in meters

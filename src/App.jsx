@@ -63,6 +63,7 @@ var App = React.createClass({
                     onRouteUpdate: this.routePlannerAction.updateRoute,
                     onFetchElevations: this.routePlannerAction.fetchElevations,
                     onExportGpx: this.routePlannerAction.exportGpx,
+                    onExportRouteSheet: this.routePlannerAction.exportRouteSheet,
                     onRoutesDelete: this.routePlannerAction.deleteRoutes,
                     onTravelModeUpdate: this.routePlannerAction.updateTravelMode,
                     onNotification: this.notificationAction.addNotification,

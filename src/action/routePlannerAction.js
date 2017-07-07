@@ -154,3 +154,10 @@ module.exports.fetchForLocationsComplete = function (points) {
         }
     };
 };
+
+module.exports.exportRouteSheet = function (directions) {
+    return function () {
+        const content = formatters.routeInstructionsToRouteSheeet(directions);
+        FileSaver.saveAs(content, "routeSheet.txt");
+    };
+};

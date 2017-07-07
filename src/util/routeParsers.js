@@ -126,3 +126,13 @@ module.exports.concatenatePointsLists = function (pointLists) {
         })
      );
 };
+
+/**
+ * @desc Flatten the given instructions lists.
+ * @param {routeInstruction[]} instructionsLists - the list of instructions lists
+ *     (each entry in the instructionsLists is an array of routeInstructions) to flatten
+ * @return {routeInstruction[]} - a flat array of route instructions
+ */
+module.exports.concatenateRouteInstructionsLists = function (instructionsLists) {
+    return _.flatten(instructionsLists);
+};

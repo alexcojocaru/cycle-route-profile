@@ -64,11 +64,19 @@ const Map = React.createClass({
 
 
     /**
-     * @desc Build and return the complete point list which describe the routes being rendered.
-     * @return {point[]} - the points list
+     * @desc Build and return the complete point lists which describe the routes being rendered.
+     * @return {point[]} - the list of complete points lists
      */
     _getCompletePointsLists: function () {
         return conversions.getCompletePointsLists(this.routesDirections);
+    },
+
+    /**
+     * @desc Build and return the instructions lists which describe the routes being rendered.
+     * @return {routeInstruction[]} - the list of instructions lists
+     */
+    _getRouteInstructionsLists: function () {
+        return conversions.getRouteInstructionsLists(this.routesDirections);
     },
 
     /**
