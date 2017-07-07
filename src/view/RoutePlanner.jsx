@@ -21,7 +21,11 @@ var RoutePlanner = React.createClass({
     },
 
     _onHighlightActiveRoutePoint: function (point) {
-        this.chart._onHighlightActiveRoutePoint(point);
+        this.chart._onHighlightActivePoint(point);
+    },
+
+    _onHighlightActiveChartPoint: function (point) {
+        this.map._onHighlightActivePoint(point);
     },
 
     componentWillReceiveProps: function (nextProps) {
@@ -44,7 +48,8 @@ var RoutePlanner = React.createClass({
                             {...this.props}
                             onHighlightActiveRoutePoint={this._onHighlightActiveRoutePoint} />
                     <ElevationChart ref={ chart => { this.chart = chart; } }
-                            {...this.props} />
+                            {...this.props}
+                            onHighlightActiveChartPoint={this._onHighlightActiveChartPoint} />
                 </PanelGroup>
                 <EndpointSelectionDialog {...this.props} />
                 <Sidebar {...this.props} />

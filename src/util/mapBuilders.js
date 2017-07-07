@@ -49,22 +49,47 @@ module.exports.newMap = newMap;
  * @return {google.maps.Marker} - the newly created marker
  */
 const newMarker = function (endpointType, map) {
-    const url = endpointType === EndpointType.START
-        ? "https://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=A|00D900"
-        : "https://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=B|F9645A";
-    const title = endpointType === EndpointType.START ? "Start" : "Finish";
+    let url, title, size, zIndex, origin, anchor;
+    switch (endpointType) {
+        case EndpointType.START:
+            url = "https://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=A|00D900";
+            title = "Start";
+            size = new google.maps.Size(21, 34);
+            origin = new google.maps.Point(0, 0);
+            anchor = new google.maps.Point(10, 34);
+            zIndex = -1;
+            break;
+        case EndpointType.WAYPOINT:
+            url = "https://maps.gstatic.com/mapfiles/dd-via.png";
+            title = null;
+            size = new google.maps.Size(11, 11);
+            origin = new google.maps.Point(0, 0);
+            anchor = new google.maps.Point(5, 5);
+            zIndex = 100;
+            break;
+        case EndpointType.FINISH:
+            url = "https://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=B|F9645A";
+            title = "Finish";
+            size = new google.maps.Size(21, 34);
+            origin = new google.maps.Point(0, 0);
+            anchor = new google.maps.Point(10, 34);
+            zIndex = -1;
+            break;
+        default:
+    }
 
     const marker = new google.maps.Marker({
         map: map,
         icon: {
             url: url,
-            size: new google.maps.Size(21, 34),
-            origin: new google.maps.Point(0, 0)
+            size: size,
+            origin: origin,
+            anchor: anchor
         },
         title: title,
         draggable: false,
         visible: false,
-        zIndex: -1
+        zIndex: zIndex
     });
 
     return marker;

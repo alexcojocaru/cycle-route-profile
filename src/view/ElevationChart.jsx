@@ -12,12 +12,14 @@ const parsers = require("../util/elevationParsers");
 const ElevationChart = React.createClass({
     propTypes: {
         elevations: React.PropTypes.array,
-        distance: React.PropTypes.number
+        distance: React.PropTypes.number,
+        onHighlightActiveChartPoint: React.PropTypes.func
     },
 
     activeRoutePoint: null, // the point to highlight as the mouse cursor is over a route
+    disableHighlightEvent: false,
 
-    _onHighlightActiveRoutePoint: function (point) {
+    _onHighlightActivePoint: function (point) {
         if (this.chart && this.activeRoutePoint !== point) {
             logger.trace("Highlighting point:", point);
 
@@ -25,10 +27,15 @@ const ElevationChart = React.createClass({
 
             const closestPoint = parsers.findClosestPoint(this.props.elevations, point);
 
+            // I don't want the highlight event to be triggered back through the onHover
+            this.disableHighlightEvent = true;
+
             // the hack below is described in
             // https://stackoverflow.com/questions/34679293/how-to-programmatically-make-a-line-chart-point-active-highlighted
             const chart = this.chart.chart_instance;
             chart.getDatasetMeta(0).controller.highlightPoint(closestPoint.index);
+
+            this.disableHighlightEvent = false;
         }
     },
 
@@ -107,8 +114,7 @@ const ElevationChart = React.createClass({
     },
 
     // TODO
-    // handle event:
-    //   - on mouse move along line, move the waypoint on the route
+    // get elevations along the actual route, not along the straight line
     // show the horizontal and vertical line (sight like) on chart
     // fix the grade calculation - it's too extreme
     //      calculate the true distance between two geodesic points
@@ -179,7 +185,20 @@ const ElevationChart = React.createClass({
             hover: {
                 // these 2 config props should match the corresponding ones on tooltips
                 intersect: false,
-                mode: "index"
+                mode: "index",
+                onHover: function (event, activeElements) {
+                    if (self.disableHighlightEvent === true) {
+                        return;
+                    }
+                    
+                    if (activeElements && activeElements.length > 0) {
+                        const index = activeElements[0]._index;
+                        self.props.onHighlightActiveChartPoint(self.props.elevations[index]);
+                    }
+                    else {
+                        self.props.onHighlightActiveChartPoint(null);
+                    }
+                }
             },
             tooltips: {
                 // these 2 config props should match the corresponding ones on hover

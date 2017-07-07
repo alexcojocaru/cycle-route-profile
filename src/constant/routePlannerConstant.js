@@ -11,6 +11,7 @@ module.exports.TravelMode = TravelMode;
 
 var EndpointType = keyMirror({
     START: null,
+    WAYPOINT: null,
     FINISH: null
 });
 module.exports.EndpointType = EndpointType;

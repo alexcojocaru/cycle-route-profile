@@ -49,6 +49,8 @@ const Map = React.createClass({
     // special markers to help differentiate the global start/finish visually from the other points
     start: null,
     finish: null,
+    // special marker to show the highlighted point on the chart
+    activePoint: null,
     // a map of route hashes to renderer and listener objects
     // eg: { 123: { renderer: r1, listener: l1 }, abc: { renderer: r2, listener: l2 } }
     routesDirections: {},
@@ -58,6 +60,27 @@ const Map = React.createClass({
     pathTolerance: 0, // the tolerance to use for checking if the mouse cursor is over a route
     mapZoomListener: null,
     mapTilesLoadedListener: null,
+
+    /**
+     * @desc Highlight the given point on the map as a route active point.
+     * @param {point} point - the point to highlight
+     */
+    _onHighlightActivePoint: function (point) {
+        logger.trace("highlight point:", point);
+        this._updatePoint(this.activePoint, point);
+    },
+
+    /**
+     * @desc Update the position and visibility of the given marker according to the supplied point.
+     * @param {google.maps.Marker} marker - the marker to update
+     * @param {point} point - the simple point to use as reference
+     */
+    _updatePoint: function (marker, point) {
+        if (point) {
+            marker.setPosition(conversions.convertSimpleCoordinateToGoogle(point));
+        }
+        marker.setVisible(Boolean(point));
+    },
 
     /**
      * @desc When the user clicks on the map, if the start and the finish point are not set,
@@ -104,7 +127,7 @@ const Map = React.createClass({
 
     /**
      * @desc Check if the cursor is over a route and, if so,
-     * highlight the corresponding point on the elevation chart.
+     *     highlight the corresponding point on the elevation chart.
      * @param {MouseEvent} e - the mouse move event
      */
     _updateActivePoint: function (e) {
@@ -130,15 +153,12 @@ const Map = React.createClass({
      *    with the point on the route found by the finder function.
      * @param {function} finder - the finder function to be applied on the route list
      *    and on the point list
-     * @param {google.maps.Marker} endpoint - the marker to update
+     * @param {google.maps.Marker} marker - the marker to update
      */
-    _updateEndpoint: function (finder, endpoint) {
+    _updateEndpoint: function (finder, marker) {
         const route = finder(this.routes);
         const point = route && finder(route.points);
-        if (point) {
-            endpoint.setPosition(conversions.convertSimpleCoordinateToGoogle(point));
-        }
-        endpoint.setVisible(Boolean(point));
+        this._updatePoint(marker, point);
     },
 
     _registerRoute: function (routeHash, isNewRoute) {
@@ -337,6 +357,7 @@ const Map = React.createClass({
 
         this.start = builders.newMarker(EndpointType.START, this.map);
         this.finish = builders.newMarker(EndpointType.FINISH, this.map);
+        this.activePoint = builders.newMarker(EndpointType.WAYPOINT, this.map);
     },
 
     _buildRouteDefinition: function (routeHash) {
