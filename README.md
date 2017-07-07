@@ -1,7 +1,8 @@
 Add elevation coordinates to a GPX file
 =======================================
-A Javascript application to add the missing elevation coordinates to
-each point in a GPX file.
+A Javascript application to build a route using the Google Maps APIs
+and generate the elevation chart real time (as the route is being modified).
+The application has support for unlimited number of waypoints.
 
 The application uses the Google Elevation API:
 https://developers.google.com/maps/documentation/elevation/intro
@@ -15,22 +16,21 @@ not be sent to any server other than the Google elevation API.
 
 Prerequisites
 -------------
-* node v6.9.1: https://nodejs.org/en/download/releases/
+* node v6.9.1 - https://nodejs.org/en/download/releases/
+* yarn 0.21.3 - https://yarnpkg.com/en/docs/install
 
 
 
 Resources
 ---------
-Google Elevation Service Guide
-https://developers.google.com/maps/documentation/javascript/elevation
-Google Maps API Reference
-https://developers.google.com/maps/documentation/javascript/3.exp/reference#ElevationService
-Get an API key
-https://developers.google.com/maps/documentation/elevation/get-api-key
-
-Not using this one, for it doesn't accept CORS requests (FML):
-Google Elevation API
-https://developers.google.com/maps/documentation/elevation/intro
+* Get an API key
+> https://developers.google.com/maps/documentation/elevation/get-api-key
+* Google Maps API Reference
+> https://developers.google.com/maps/documentation/javascript/3.exp/reference
+* Google Elevation Service Guide
+> https://developers.google.com/maps/documentation/javascript/elevation
+* ChartJS
+> http://www.chartjs.org/docs/
 
 
 
@@ -39,6 +39,14 @@ Running the application
 Run
 `yarn install && yarn run start`
 and open http://localhost:8080/index.html in the browser.
+
+
+
+Using query parameters to modify the app behavior
+=================================================
+Eg. http://localhost:8080/?apiKey=xyz&logLevel=DEBUG
+* apiKey - preset the apiKey to be used;
+* logLevel - override the log level; valid values are TRACE, DEBUG, INFO, WARN, ERROR.
 
 
 

@@ -2,6 +2,7 @@
 "use strict";
 
 const keyMirror = require("fbjs/lib/keyMirror");
+const queryString = require("query-string");
 
 
 const Level = keyMirror({
@@ -13,6 +14,8 @@ const Level = keyMirror({
 });
 module.exports.Level = Level;
 
+const overrideLevel = queryString.parse(location.search).logLevel;
+
 const LoggerConfig = {
     root: Level.INFO,
     // define levels for specific component names as needed
@@ -21,7 +24,7 @@ const LoggerConfig = {
 
 const Logger = function (name) {
     const componentName = name || "N/A";
-    const level = LoggerConfig[componentName] || LoggerConfig.root || Level.INFO;
+    const level = overrideLevel || LoggerConfig[componentName] || LoggerConfig.root || Level.INFO;
 
     const log = function () {
         // formatted timestamp translated to the browser's locale
