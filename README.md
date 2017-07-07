@@ -1,5 +1,5 @@
-Add elevation coordinates to a GPX file
-=======================================
+# cycle-route-profile
+---------------------
 A Javascript application to build a route using the Google Maps APIs
 and generate the elevation chart real time (as the route is being modified).
 The application has support for unlimited number of waypoints.
@@ -43,7 +43,7 @@ and open http://localhost:8080/index.html in the browser.
 
 
 Using query parameters to modify the app behavior
-=================================================
+-------------------------------------------------
 Eg. http://localhost:8080/?apiKey=xyz&logLevel=DEBUG
 * apiKey - preset the apiKey to be used;
 * logLevel - override the log level; valid values are TRACE, DEBUG, INFO, WARN, ERROR.
