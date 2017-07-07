@@ -1,7 +1,7 @@
 "use strict";
 
 // reference the static assets, to be processed/bundled by the webpack plugins
-require("./css/main.scss");
+require("./css/main.css");
 
 var React = require("react");
 var ReactDOM = require("react-dom");

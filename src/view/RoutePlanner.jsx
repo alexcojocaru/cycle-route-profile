@@ -14,7 +14,7 @@ var TravelModeLabel = require("../constant/routePlannerConstant").TravelModeLabe
 var TravelModePropValidator = require("../util/routeValidators").TravelModePropValidator;
 var formatters = require("../util/routeFormatters");
 
-var Map = require("./Map.jsx");
+var Map = require("./LeafletMap.jsx");
 var EndpointSelectionDialog = require("./EndpointSelectionDialog.jsx");
 
 var RoutePlanner = React.createClass({

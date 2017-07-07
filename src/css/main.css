@@ -1,0 +1,38 @@
+html, body, #app, #container {
+	font-family: Arial;
+	font-size: 13px;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+#app {
+	display: flex;
+	flex-direction: column;
+}
+/* the react root element */
+#app > div {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+}
+#route-planner, #map-container {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+}
+#map {
+	flex: 1 1;
+}
+.feedbackError {
+	color: #d22;
+}
+.label {
+	font-size: 15px;
+	padding-right: 10px;
+	color: #555;
+}
+.dialogTitle {
+	font-size: 15px;
+	color: #555;
+	font-weight: bold;
+}
