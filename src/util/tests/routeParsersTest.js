@@ -61,6 +61,7 @@ describe("routeParsers", function () {
         });
     });
 
+    /*
     describe("all points", function () {
         it("all points", function () {
             const routes = [
@@ -87,4 +88,5 @@ describe("routeParsers", function () {
             ]);
         });
     });
+    */
 });

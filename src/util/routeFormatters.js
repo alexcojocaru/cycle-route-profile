@@ -150,7 +150,7 @@ module.exports.routeInstructionsToRouteSheeet = function (directions) {
     });
 
     // Add one more instruction: ARRIVEE for the last int. distance.
-    if (intermediateDistance != 0) {
+    if (intermediateDistance !== 0) {
         cumulativeDistance += intermediateDistance;
         routeSheet.push({
             distCum: cumulativeDistance,
@@ -161,7 +161,7 @@ module.exports.routeInstructionsToRouteSheeet = function (directions) {
 
 
     const content = new Array();
-    content.push(`Dist(cum.)     Dist(int.)     Instruction`);
+    content.push("Dist(cum.)     Dist(int.)     Instruction");
     _.each(routeSheet, step => {
         content.push("\n");
 
@@ -174,9 +174,9 @@ module.exports.routeInstructionsToRouteSheeet = function (directions) {
         content.push(" ".repeat(5));
 
         const instructions = step.instructions
-                .replace(/\<br\s?\\?\>/g, "; ") // replace all br's with semicolon-space
-                .replace(/\<div.*\>/g, "") // replace all start divs with semicolon-space
-                .replace(/\<\/?\w+\s?\\?\>/g, ""); // remove all start/end/full tags
+                .replace(/<br\s?\\?>/g, "; ") // replace all br's with semicolon-space
+                .replace(/<div.*>/g, "") // replace all start divs with semicolon-space
+                .replace(/<\/?\w+\s?\\?>/g, ""); // remove all start/end/full tags
         content.push(instructions);
     });
 
