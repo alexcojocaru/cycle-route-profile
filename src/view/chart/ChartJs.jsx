@@ -28,6 +28,39 @@ var roundNumber = function (num, scale) {
   }
 };
 
+var horizontalLine = function (instance) {
+    const active = instance._chart.controller.active;
+    
+    if (Array.isArray(active) && active.length > 0) {
+        const point = active[0]._model;
+        const xScale = active[0]._xScale;
+
+        // draw line
+        instance._chart.ctx.beginPath();
+        instance._chart.ctx.moveTo(xScale.left, point.y);
+        instance._chart.ctx.strokeStyle = '#000000';
+        instance._chart.ctx.lineTo(xScale.right, point.y);
+        instance._chart.ctx.stroke();
+        instance._chart.ctx.closePath();
+    }
+};
+var verticalLine = function (instance) {
+    const active = instance._chart.controller.active;
+    
+    if (Array.isArray(active) && active.length > 0) {
+        const point = active[0]._model;
+        const yScale = active[0]._yScale;
+
+        // draw line
+        instance._chart.ctx.beginPath();
+        instance._chart.ctx.moveTo(point.x, yScale.top);
+        instance._chart.ctx.strokeStyle = '#000000';
+        instance._chart.ctx.lineTo(point.x, yScale.bottom);
+        instance._chart.ctx.stroke();
+        instance._chart.ctx.closePath();
+    }
+};
+
 // save the original line element so we can still call it's 
 // draw method after we build the linear gradient
 var origLineElement = Chart.elements.Line;
@@ -40,6 +73,11 @@ Chart.elements.Line = Chart.Element.extend({
 
     if (Array.isArray(backgroundColors) === false || backgroundColors.length === 0) {
       origLineElement.prototype.draw.apply(this);
+
+      // and the additional horizontal and vertical lines
+      horizontalLine(this);
+      verticalLine(this);
+
       return;
     }
 
@@ -82,6 +120,10 @@ Chart.elements.Line = Chart.Element.extend({
 
     // now draw the lines (using the original draw method)
     origLineElement.prototype.draw.apply(this);
+
+    // and the additional horizontal and vertical lines
+    horizontalLine(this);
+    verticalLine(this);
   }
 });
 

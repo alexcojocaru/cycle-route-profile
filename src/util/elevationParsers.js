@@ -50,17 +50,12 @@ module.exports.buildElevationData = function (points, pointDistance) {
  * @return {number[]} - the grade list
  */
 module.exports.buildGradesList = function (points, pointDistance) {
-    const grades = _.map(points, (point, index, list) => {
-        let grade;
-
+    let previous;
+    const grades = _.map(points, (point, index) => {
         // first point doesn't have a grade
-        if (index === 0) {
-            grade = 0;
-        }
-        else {
-            const previous = list[index - 1];
-            grade = 100 * (point.ele - previous.ele) / pointDistance;
-        }
+        const grade = index === 0 ? 0 : (100 * (point.ele - previous.ele) / pointDistance);
+
+        previous = point;
         
         return grade;
     });

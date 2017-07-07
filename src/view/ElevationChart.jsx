@@ -113,11 +113,6 @@ const ElevationChart = React.createClass({
                     || hashFull(this.props.elevations) !== hashFull(nextProps.elevations));
     },
 
-    // TODO
-    // show the horizontal and vertical line (sight like) on chart
-    // fix the grade calculation - it's too extreme
-    //      calculate the true distance between two geodesic points
-
     render: function () {
         logger.debug("elevation chart render; props:", this.props);
 
